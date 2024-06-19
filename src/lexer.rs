@@ -7,6 +7,7 @@ use std::process::exit;
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum Token {
     NUM,
+    STR,
     ID,
     PLUS,
     MINUS,
@@ -14,6 +15,8 @@ pub enum Token {
     SEMICOLON,
     LPAR,
     RPAR,
+    QUOTE,
+    PRINT,
     EOF,
 }
 
@@ -25,11 +28,13 @@ pub enum Value {
 
 pub struct Lexer {
     pub symbols: HashMap<char, Token>,
+    pub words: HashMap<String, Token>,
     pub input: Vec<char>,
     pub position: usize,
     pub char: char,
     pub token: Option<Token>,
     pub value: Option<Value>,
+    pub is_string: bool,
 }
 
 impl Lexer {
@@ -41,14 +46,20 @@ impl Lexer {
             ('-', Token::MINUS),
             ('=', Token::EQUAL),
             (';', Token::SEMICOLON),
+            ('"', Token::QUOTE),
         ]);
+
+        let words = HashMap::from([("print".to_string(), Token::PRINT)]);
+
         let mut lexer = Lexer {
             symbols,
+            words,
             input: input.chars().collect(),
             position: 0,
             char: ' ',
             token: None,
             value: None,
+            is_string: false,
         };
 
         lexer.getc();
@@ -78,6 +89,11 @@ impl Lexer {
                 _ if self.char.is_whitespace() => self.getc(),
                 _ if self.symbols.contains_key(&self.char) => {
                     let matched_token = self.symbols.get(&self.char).unwrap().clone();
+
+                    if matched_token == Token::QUOTE {
+                        self.is_string = !self.is_string;
+                    }
+
                     self.token = Some(matched_token);
                     self.getc();
                 }
@@ -87,8 +103,17 @@ impl Lexer {
                         value = value * 10 + self.char.to_digit(10).unwrap() as i32;
                         self.getc();
                     }
-                    self.token = Some(Token::NUM);
-                    self.value = Some(Value::INT(value));
+
+                    match self.is_string {
+                        true => {
+                            self.token = Some(Token::STR);
+                            self.value = Some(Value::STR(value.to_string()))
+                        }
+                        false => {
+                            self.token = Some(Token::NUM);
+                            self.value = Some(Value::INT(value))
+                        }
+                    }
                 }
                 _ if self.char.is_alphabetic() => {
                     let mut id = String::new();
@@ -96,11 +121,26 @@ impl Lexer {
                         id.push(self.char);
                         self.getc();
                     }
-                    self.token = Some(Token::ID);
-                    self.value = Some(Value::STR(id));
+
+                    if self.words.contains_key(&id) {
+                        let matched_token = Some(self.words.get(&id).unwrap().clone());
+
+                        self.token = matched_token;
+                    } else {
+                        match self.is_string {
+                            false => {
+                                self.token = Some(Token::ID);
+                                self.value = Some(Value::STR(id));
+                            }
+                            true => {
+                                self.token = Some(Token::STR);
+                                self.value = Some(Value::STR(id));
+                            }
+                        }
+                    }
                 }
                 _ => {
-                    &self.error(format!("Unexpected symbol: {}", self.char));
+                    let _ = self.error(format!("Unexpected symbol: {}", self.char));
                 }
             }
         }

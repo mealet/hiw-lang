@@ -34,6 +34,10 @@ impl Compiler {
                 self.gen(Operations::PUSH);
                 self.gen(Operations::ARG(node.value.unwrap()));
             }
+            Kind::STRING => {
+                self.gen(Operations::PUSH);
+                self.gen(Operations::ARG(node.value.unwrap()));
+            }
             Kind::ADD => {
                 self.compile(*node.op1.clone().unwrap());
                 self.compile(*node.op2.clone().unwrap());
@@ -48,6 +52,10 @@ impl Compiler {
                 self.compile(*node.op2.clone().unwrap());
                 self.gen(Operations::STORE);
                 self.gen(Operations::ARG(node.op1.clone().unwrap().value.unwrap()));
+            }
+            Kind::PRINT => {
+                self.compile(*node.op1.clone().unwrap());
+                self.gen(Operations::PRINT);
             }
             Kind::PROG | Kind::EXPR => {
                 if let Some(op1) = node.op1 {
@@ -70,4 +78,3 @@ impl Compiler {
         self.program.clone()
     }
 }
-

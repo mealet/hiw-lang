@@ -12,9 +12,11 @@ use crate::lexer::{Token, Value};
 pub enum Kind {
     VAR,
     CONST,
+    STRING,
     ADD,
     SUB,
     SET,
+    PRINT,
     EMPTY,
     PROG,
     EXPR,
@@ -81,6 +83,22 @@ impl Parser {
                 self.lexer.next_token();
                 return node;
             }
+            Token::STR => {
+                let mut ident = String::new();
+                while self.lexer.token.unwrap() == Token::STR {
+                    if let Value::STR(str_val) = self.lexer.value.clone().unwrap() {
+                        ident.push_str(format!("{} ", str_val).as_str());
+                    }
+                    self.lexer.next_token();
+                }
+
+                // Removing last symbol, because it space
+                ident = ident[0..ident.len() - 1].to_string();
+
+                let node = Node::new(Kind::STRING, Some(Value::STR(ident)), None, None, None);
+                self.lexer.next_token();
+                return node;
+            }
             _ => return self.paren_expression(),
         }
     }
@@ -114,14 +132,14 @@ impl Parser {
     fn paren_expression(&mut self) -> Node {
         let token = self.lexer.token.clone().unwrap();
 
-        if token != Token::LPAR {
-            self.error("'(' expected!".to_string());
-        }
+        // if token != Token::LPAR {
+        //     self.error("'(' expected!".to_string());
+        // }
         self.lexer.next_token();
         let node = self.expression();
-        if self.lexer.token.unwrap() != Token::RPAR {
-            self.error("')' expected".to_string());
-        }
+        // if self.lexer.token.unwrap() != Token::RPAR {
+        //     self.error("')' expected".to_string());
+        // }
         self.lexer.next_token();
         return node;
     }
@@ -156,6 +174,16 @@ impl Parser {
             Token::SEMICOLON => {
                 node = Node::new(Kind::EMPTY, None, None, None, None);
                 self.lexer.next_token();
+            }
+            Token::PRINT => {
+                self.lexer.next_token();
+                node = Node::new(
+                    Kind::PRINT,
+                    None,
+                    Some(Box::new(self.paren_expression())),
+                    None,
+                    None,
+                );
             }
             _ => {
                 node = Node::new(

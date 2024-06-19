@@ -26,6 +26,7 @@ pub enum Operations {
     ARG(Value),
     FETCH,
     STORE,
+    PRINT,
     JMP,
     JZ,
     JNZ,
@@ -150,6 +151,19 @@ impl VM {
                     }
 
                     pc += 2
+                }
+                Operations::PRINT => {
+                    let print_value = self.stack.pop().unwrap();
+                    match print_value {
+                        Value::INT(integer) => {
+                            println!("{}", integer)
+                        }
+                        Value::STR(string) => {
+                            println!("{}", string)
+                        }
+                    }
+
+                    pc += 1;
                 }
                 Operations::JMP => {
                     if let Operations::ARG(Value::INT(jump_code)) = arg {

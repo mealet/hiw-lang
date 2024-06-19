@@ -43,10 +43,6 @@ fn main() {
 
     let mut vm = vm::VM::new(byte_code);
     let _ = vm.run();
-
-    // Printing Results
-
-    println!("Stack: {:?}\nVariables: {:?}", vm.stack, vm.variables);
 }
 
 // TODO: Add compiling VM with byte code to binary file
@@ -105,6 +101,28 @@ mod tests {
 
         println!("{:?}", tokens);
         println!("{:?}", values);
+    }
+
+    #[test]
+    fn print_tokens_test() {
+        let input = String::from("print(\"fd\")");
+        let mut lexer = lexer::Lexer::new(input.clone());
+
+        let mut tokens = Vec::new();
+        let mut values = Vec::new();
+
+        while lexer.token != Some(lexer::Token::EOF) {
+            lexer.next_token();
+            if let Some(tok) = lexer.token {
+                let _ = tokens.push(tok);
+                let _ = values.push(lexer.value.clone());
+            }
+        }
+
+        println!("{:?}", tokens);
+        println!("{:?}", values);
+
+        println!("");
     }
 
     // Parser Tests
