@@ -49,6 +49,9 @@ fn main() {
     println!("Stack: {:?}\nVariables: {:?}", vm.stack, vm.variables);
 }
 
+// TODO: Add compiling VM with byte code to binary file
+// TODO: Add print command
+
 // Tests
 #[cfg(test)]
 mod tests {
