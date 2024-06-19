@@ -46,7 +46,6 @@ fn main() {
 }
 
 // TODO: Add compiling VM with byte code to binary file
-// TODO: Add print command
 
 // Tests
 #[cfg(test)]
