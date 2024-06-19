@@ -1,7 +1,10 @@
+const APP_VERSION: &str = env!("CARGO_PKG_VERSION");
+
 pub fn greeting() {
     println!(
         r#"
-HIW Compiler | 1.0.0
-"#
+HIW Compiler | {}
+"#,
+        APP_VERSION
     )
 }

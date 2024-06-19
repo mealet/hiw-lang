@@ -4,6 +4,7 @@
 // =====================================================
 // https://github.com/mealet
 
+mod binary_compiler;
 mod compiler;
 mod filereader;
 mod greeting;
@@ -12,6 +13,10 @@ mod parser;
 mod vm;
 
 fn main() {
+    // Option Variables
+
+    let mut compile_mode = false;
+
     // Greeting user
 
     greeting::greeting();
@@ -22,6 +27,8 @@ fn main() {
     if args.clone().len() < 2 {
         eprintln!("Not enough arguments!");
         std::process::exit(1);
+    } else if args.clone().len() > 2 {
+        compile_mode = true;
     }
 
     // Creating Lexer Analyzer
@@ -39,13 +46,29 @@ fn main() {
     let mut compiler = compiler::Compiler::new();
     let byte_code = compiler.compile(abstract_syntax_tree);
 
-    // Running VM
+    // Creating VM
 
     let mut vm = vm::VM::new(byte_code);
-    let _ = vm.run();
+
+    // Checking compile mode
+
+    if compile_mode {
+        // Compiling VM with commands
+
+        let output_filename = args[2].clone();
+
+        let compile_container = binary_compiler::Container::new(output_filename, vm);
+        let _ = compile_container.compile();
+    } else {
+        // Running VM
+
+        let _ = vm.run();
+    }
 }
 
-// TODO: Add compiling VM with byte code to binary file
+// TODO: Add '<' and '>' expressions
+// TODO: Add bool type
+// TODO: Add while cycle
 
 // Tests
 #[cfg(test)]
