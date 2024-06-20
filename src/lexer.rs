@@ -16,6 +16,11 @@ pub enum Token {
     LPAR,
     RPAR,
     QUOTE,
+    EXCLAM,
+    QUESTM,
+    DOT,
+    COMMA,
+    COLON,
     PRINT,
     EOF,
 }
@@ -35,6 +40,7 @@ pub struct Lexer {
     pub token: Option<Token>,
     pub value: Option<Value>,
     pub is_string: bool,
+    pub space_before: bool,
 }
 
 impl Lexer {
@@ -47,6 +53,11 @@ impl Lexer {
             ('=', Token::EQUAL),
             (';', Token::SEMICOLON),
             ('"', Token::QUOTE),
+            ('!', Token::EXCLAM),
+            ('?', Token::QUESTM),
+            (':', Token::COLON),
+            ('.', Token::DOT),
+            (',', Token::COMMA),
         ]);
 
         let words = HashMap::from([("print".to_string(), Token::PRINT)]);
@@ -60,6 +71,7 @@ impl Lexer {
             token: None,
             value: None,
             is_string: false,
+            space_before: false,
         };
 
         lexer.getc();
@@ -86,16 +98,38 @@ impl Lexer {
         while self.token.is_none() {
             match self.char {
                 '\0' => self.token = Some(Token::EOF),
-                _ if self.char.is_whitespace() => self.getc(),
+                _ if self.char.is_whitespace() => {
+                    if self.is_string {
+                        self.space_before = true;
+                    }
+
+                    self.getc();
+                }
                 _ if self.symbols.contains_key(&self.char) => {
                     let matched_token = self.symbols.get(&self.char).unwrap().clone();
 
                     if matched_token == Token::QUOTE {
+                        self.token = Some(matched_token);
                         self.is_string = !self.is_string;
-                    }
+                        self.getc();
+                    } else {
+                        match self.is_string {
+                            true => {
+                                self.token = Some(Token::STR);
 
-                    self.token = Some(matched_token);
-                    self.getc();
+                                self.value = match self.space_before {
+                                    true => {
+                                        self.space_before = false;
+                                        Some(Value::STR(format!(" {}", self.char)))
+                                    }
+                                    false => Some(Value::STR(self.char.to_string())),
+                                }
+                            }
+                            false => self.token = Some(matched_token),
+                        }
+
+                        self.getc();
+                    }
                 }
                 _ if self.char.is_digit(10) => {
                     let mut value = 0;
@@ -107,7 +141,14 @@ impl Lexer {
                     match self.is_string {
                         true => {
                             self.token = Some(Token::STR);
-                            self.value = Some(Value::STR(value.to_string()))
+
+                            self.value = match self.space_before {
+                                true => {
+                                    self.space_before = false;
+                                    Some(Value::STR(format!(" {}", value)))
+                                }
+                                false => Some(Value::STR(value.to_string())),
+                            }
                         }
                         false => {
                             self.token = Some(Token::NUM);
@@ -134,7 +175,14 @@ impl Lexer {
                             }
                             true => {
                                 self.token = Some(Token::STR);
-                                self.value = Some(Value::STR(id));
+
+                                self.value = match self.space_before {
+                                    true => {
+                                        self.space_before = false;
+                                        Some(Value::STR(format!(" {}", id)))
+                                    }
+                                    false => Some(Value::STR(id)),
+                                }
                             }
                         }
                     }

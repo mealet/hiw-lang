@@ -87,7 +87,7 @@ impl Parser {
                 let mut ident = String::new();
                 while self.lexer.token.unwrap() == Token::STR {
                     if let Value::STR(str_val) = self.lexer.value.clone().unwrap() {
-                        ident.push_str(format!("{} ", str_val).as_str());
+                        ident.push_str(format!("{}", str_val).as_str());
                     }
                     self.lexer.next_token();
                 }
@@ -133,12 +133,12 @@ impl Parser {
         let token = self.lexer.token.clone().unwrap();
 
         // if token != Token::LPAR {
-        //     self.error("'(' expected!".to_string());
+        // self.error("'(' expected!".to_string());
         // }
         self.lexer.next_token();
         let node = self.expression();
         // if self.lexer.token.unwrap() != Token::RPAR {
-        //     self.error("')' expected".to_string());
+        // self.error("')' expected".to_string());
         // }
         self.lexer.next_token();
         return node;

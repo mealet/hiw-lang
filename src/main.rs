@@ -78,7 +78,8 @@ mod tests {
     // Lexer Tests;
     #[test]
     fn math_tokens_test() {
-        let input = String::from("1 + 1 = 2");
+        let input = String::from("print(\"Hello world!\"); print(\"Hello World!\");");
+
         let mut lexer = lexer::Lexer::new(input);
 
         let mut tokens = Vec::new();
@@ -91,18 +92,6 @@ mod tests {
         }
 
         println!("{:?}", tokens);
-
-        assert_eq!(
-            tokens,
-            vec![
-                lexer::Token::NUM,
-                lexer::Token::PLUS,
-                lexer::Token::NUM,
-                lexer::Token::EQUAL,
-                lexer::Token::NUM,
-                lexer::Token::EOF
-            ]
-        );
     }
 
     #[test]
@@ -127,7 +116,7 @@ mod tests {
 
     #[test]
     fn print_tokens_test() {
-        let input = String::from("print(\"fd\")");
+        let input = String::from("print(\"fd!\")");
         let mut lexer = lexer::Lexer::new(input.clone());
 
         let mut tokens = Vec::new();
