@@ -92,9 +92,6 @@ impl Parser {
                     self.lexer.next_token();
                 }
 
-                // Removing last symbol, because it space
-                ident = ident[0..ident.len() - 1].to_string();
-
                 let node = Node::new(Kind::STRING, Some(Value::STR(ident)), None, None, None);
                 self.lexer.next_token();
                 return node;
