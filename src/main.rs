@@ -67,6 +67,9 @@ fn main() {
 }
 
 // TODO: Add while cycle
+// TODO: Add IF/ELSE comparsion
+// TODO: Add float type
+// TODO: Add multiply and divide operations
 
 // Tests
 #[cfg(test)]
