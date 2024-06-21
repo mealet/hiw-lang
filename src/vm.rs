@@ -160,13 +160,11 @@ impl VM {
                         Value::INT(integer) => {
                             println!("{}", integer)
                         }
-                        Value::STR(string) => {
-                            if string == "hiw.stack".to_string() {
-                                println!("{:?}", self.stack);
-                            } else {
-                                println!("{}", string);
-                            }
-                        }
+                        Value::STR(string) => match string.as_str() {
+                            "::stack" => println!("{:?}", self.stack.clone()),
+                            "::var" => println!("{:?}", self.variables.clone()),
+                            _ => println!("{}", string),
+                        },
                         Value::BOOL(boo) => {
                             if boo {
                                 println!("true");
