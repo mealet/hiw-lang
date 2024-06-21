@@ -16,6 +16,9 @@ pub enum Kind {
     ADD,
     SUB,
     SET,
+    LT,
+    BT,
+    BOOL,
     PRINT,
     EMPTY,
     PROG,
@@ -96,6 +99,7 @@ impl Parser {
                 self.lexer.next_token();
                 return node;
             }
+
             _ => return self.paren_expression(),
         }
     }
@@ -126,6 +130,36 @@ impl Parser {
         return node;
     }
 
+    fn test(&mut self) -> Node {
+        let mut node = self.summa();
+
+        match self.lexer.token.unwrap() {
+            Token::LESS => {
+                self.lexer.next_token();
+                node = Node::new(
+                    Kind::LT,
+                    None,
+                    Some(Box::new(node.clone())),
+                    Some(Box::new(self.summa())),
+                    None,
+                );
+            }
+            Token::BIGGER => {
+                self.lexer.next_token();
+                node = Node::new(
+                    Kind::BT,
+                    None,
+                    Some(Box::new(node.clone())),
+                    Some(Box::new(self.summa())),
+                    None,
+                );
+            }
+            _ => {}
+        }
+
+        return node;
+    }
+
     fn paren_expression(&mut self) -> Node {
         let token = self.lexer.token.clone().unwrap();
 
@@ -145,9 +179,9 @@ impl Parser {
         let token = self.lexer.token.clone().unwrap();
 
         if token != Token::ID {
-            return self.summa();
+            return self.test();
         }
-        let mut node = self.summa();
+        let mut node = self.test();
         if node.kind == Kind::VAR && self.lexer.token.clone().unwrap() == Token::EQUAL {
             self.lexer.next_token();
             node = Node::new(
@@ -190,6 +224,7 @@ impl Parser {
                     None,
                     None,
                 );
+
                 if self.lexer.token.clone().unwrap() != Token::SEMICOLON {
                     self.error("';' expected".to_string());
                 }

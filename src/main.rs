@@ -66,8 +66,6 @@ fn main() {
     }
 }
 
-// TODO: Add '<' and '>' expressions
-// TODO: Add bool type
 // TODO: Add while cycle
 
 // Tests

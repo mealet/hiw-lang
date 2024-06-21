@@ -10,6 +10,12 @@ pub struct VM {
     pub variables: HashMap<String, Value>,
 }
 
+#[derive(Debug, Clone, Eq, PartialEq)]
+pub enum Value {
+    INT(i32),
+    STR(String),
+    BOOL(bool),
+}
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Operations {
@@ -25,15 +31,11 @@ pub enum Operations {
     FETCH,
     STORE,
     PRINT,
+    LT,
+    BT,
     JMP,
     JZ,
     JNZ,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum Value {
-    NUM(i32),
-    STR(String),
 }
 
 impl VM {
@@ -49,8 +51,8 @@ impl VM {
         let mut pc: usize = 0;
 
         loop {
-            let mut arg = Operations::ARG(Value::NUM(0));
-            let mut subarg = Operations::ARG(Value::NUM(0));
+            let mut arg = Operations::ARG(Value::INT(0));
+            let mut subarg = Operations::ARG(Value::INT(0));
 
             if pc < self.program.len() - 1 {
                 arg = self.program[pc + 1].clone();
@@ -87,11 +89,11 @@ impl VM {
                 }
                 Operations::HALT => break,
                 Operations::VAR => {
-                    // if arg == Operations::ARG( Value::NUM(arg) ) {
+                    // if arg == Operations::ARG( Value::INT(arg) ) {
                     //     eprintln!("Cannot create variable with number as a name!");
                     // } else if arg.unwrap().len() < 1 {
                     match arg {
-                        Operations::ARG(Value::NUM(_)) => {
+                        Operations::ARG(Value::INT(_)) => {
                             eprintln!("Cannot create variable with number as a name!");
                         }
                         Operations::ARG(Value::STR(varname)) => {
@@ -120,7 +122,7 @@ impl VM {
                 }
                 Operations::FETCH => {
                     match arg {
-                        Operations::ARG(Value::NUM(_)) => {
+                        Operations::ARG(Value::INT(_)) => {
                             eprintln!("Cannot fetch value from variable with number as a name!");
                         }
                         Operations::ARG(Value::STR(varname)) => {
@@ -139,7 +141,7 @@ impl VM {
                 }
                 Operations::STORE => {
                     match arg {
-                        Operations::ARG(Value::NUM(_)) => {
+                        Operations::ARG(Value::INT(_)) => {
                             eprintln!("Cannot value to variable with number as a name!");
                         }
                         Operations::ARG(Value::STR(varname)) => {
@@ -159,18 +161,29 @@ impl VM {
                 Operations::PRINT => {
                     let print_value = self.stack.pop().unwrap();
                     match print_value {
-                        Value::NUM(integer) => {
+                        Value::INT(integer) => {
                             println!("{}", integer)
                         }
                         Value::STR(string) => {
-                            println!("{}", string)
+                            if string == "hiw.stack".to_string() {
+                                println!("{:?}", self.stack);
+                            } else {
+                                println!("{}", string);
+                            }
+                        }
+                        Value::BOOL(boo) => {
+                            if boo {
+                                println!("true");
+                            } else {
+                                println!("false");
+                            }
                         }
                     }
 
                     pc += 1;
                 }
                 Operations::JMP => {
-                    if let Operations::ARG(Value::NUM(jump_code)) = arg {
+                    if let Operations::ARG(Value::INT(jump_code)) = arg {
                         if jump_code as usize > self.program.len() {
                             eprintln!("Argument is bigger program length!");
                         } else {
@@ -181,44 +194,72 @@ impl VM {
                     }
                 }
                 Operations::JZ => {
-                    if let Operations::ARG(Value::NUM(jump_code)) = arg {
+                    if let Operations::ARG(Value::INT(jump_code)) = arg {
                         if jump_code as usize > self.program.len() {
                             eprintln!("Argument is bigger program length!");
                         } else {
                             let stack_value = self.stack.pop().unwrap();
-                            if let Value::NUM(unwrapped_value) = stack_value {
-                                if unwrapped_value == 0 {
+                            if let Value::BOOL(unwrapped_value) = stack_value {
+                                if unwrapped_value == true {
                                     pc = jump_code as usize
                                 } else {
                                     pc += 1
                                 }
                             } else {
-                                eprintln!("Stack value at the top is not NUMBER!");
+                                eprintln!("Stack value at the top is not BOOL!");
                             }
                         }
                     } else {
                         eprintln!("Argument must be number!");
                     }
                 }
-                Operations::JZ => {
-                    if let Operations::ARG(Value::NUM(jump_code)) = arg {
+                Operations::JNZ => {
+                    if let Operations::ARG(Value::INT(jump_code)) = arg {
                         if jump_code as usize > self.program.len() {
                             eprintln!("Argument is bigger program length!");
                         } else {
                             let stack_value = self.stack.pop().unwrap();
-                            if let Value::NUM(unwrapped_value) = stack_value {
-                                if unwrapped_value == 0 {
+                            if let Value::BOOL(unwrapped_value) = stack_value {
+                                if unwrapped_value != true {
                                     pc = jump_code as usize
                                 } else {
                                     pc += 1
                                 }
                             } else {
-                                eprintln!("Stack value at the top is not NUMBER!");
+                                eprintln!("Stack value at the top is not BOOL!");
                             }
                         }
                     } else {
                         eprintln!("Argument must be number!");
                     }
+                }
+                Operations::LT => {
+                    let right_stack = self.stack.pop().unwrap();
+                    let left_stack = self.stack.pop().unwrap();
+
+                    if let (Value::INT(left), Value::INT(right)) = (left_stack, right_stack) {
+                        if left < right {
+                            self.stack.push(Value::BOOL(true));
+                        } else {
+                            self.stack.push(Value::BOOL(false));
+                        }
+                    }
+
+                    pc += 1
+                }
+                Operations::BT => {
+                    let right_stack = self.stack.pop().unwrap();
+                    let left_stack = self.stack.pop().unwrap();
+
+                    if let (Value::INT(left), Value::INT(right)) = (left_stack, right_stack) {
+                        if left > right {
+                            self.stack.push(Value::BOOL(true));
+                        } else {
+                            self.stack.push(Value::BOOL(false));
+                        }
+                    }
+
+                    pc += 1
                 }
                 _ => {
                     eprintln!("Undefined operation with number {}! Skipping...", pc);
@@ -236,8 +277,8 @@ impl VM {
         let _a = self.stack.pop().expect("Stack error");
         let _b = self.stack.pop().expect("Stack error");
 
-        if let (Value::NUM(a), Value::NUM(b)) = (_a, _b) {
-            self.stack.push(Value::NUM(a + b));
+        if let (Value::INT(a), Value::INT(b)) = (_a, _b) {
+            self.stack.push(Value::INT(a + b));
         } else {
             eprintln!("Cannot calculate values which both is not NUM");
         }
@@ -247,8 +288,8 @@ impl VM {
         let _a = self.stack.pop().expect("Stack error");
         let _b = self.stack.pop().expect("Stack error");
 
-        if let (Value::NUM(a), Value::NUM(b)) = (_a, _b) {
-            self.stack.push(Value::NUM(a / b));
+        if let (Value::INT(a), Value::INT(b)) = (_a, _b) {
+            self.stack.push(Value::INT(a / b));
         } else {
             eprintln!("Cannot calculate values which both is not NUM");
         }
@@ -258,8 +299,8 @@ impl VM {
         let _a = self.stack.pop().expect("Stack error");
         let _b = self.stack.pop().expect("Stack error");
 
-        if let (Value::NUM(a), Value::NUM(b)) = (_a, _b) {
-            self.stack.push(Value::NUM(a * b));
+        if let (Value::INT(a), Value::INT(b)) = (_a, _b) {
+            self.stack.push(Value::INT(a * b));
         } else {
             eprintln!("Cannot calculate values which both is not NUM");
         }
@@ -269,8 +310,8 @@ impl VM {
         let _a = self.stack.pop().expect("Stack error");
         let _b = self.stack.pop().expect("Stack error");
 
-        if let (Value::NUM(a), Value::NUM(b)) = (_a, _b) {
-            self.stack.push(Value::NUM(a / b));
+        if let (Value::INT(a), Value::INT(b)) = (_a, _b) {
+            self.stack.push(Value::INT(a / b));
         } else {
             eprintln!("Cannot calculate values which both is not NUM");
         }
@@ -304,7 +345,7 @@ impl VM {
     }
 
     pub fn store(&mut self, varname: String) {
-        let stack_value = self.stack.pop().unwrap_or(Value::NUM(0));
+        let stack_value = self.stack.pop().unwrap_or(Value::INT(0));
         self.variables.insert(varname, stack_value);
     }
 }
@@ -316,8 +357,9 @@ use std::{fmt, io::Write};
 impl fmt::Display for Value {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Value::INT(i) => write!(f, "Value::NUM({})", i),
+            Value::INT(i) => write!(f, "Value::INT({})", i),
             Value::STR(s) => write!(f, "Value::STR(\"{}\".to_string())", s),
+            Value::BOOL(b) => write!(f, "Value::BOOL({})", b),
         }
     }
 }
@@ -340,6 +382,8 @@ impl fmt::Display for Operations {
             Operations::JZ => "Operations::JZ".to_string(),
             Operations::JNZ => "Operations::JNZ".to_string(),
             Operations::PRINT => "Operations::PRINT".to_string(),
+            Operations::LT => "Operations::LT".to_string(),
+            Operations::BT => "Operations::BT".to_string(),
         };
         write!(f, "{}", s)
     }
@@ -383,6 +427,8 @@ fn main() {{
             .arg(&filenames[0])
             .output()
             .expect("Cannot compile VM");
+
+        println!("{}", String::from_utf8_lossy(&compiler.stderr));
 
         for fname in filenames {
             let _ = std::fs::remove_file(fname);

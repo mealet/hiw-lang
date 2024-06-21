@@ -27,6 +27,8 @@ pub enum Operations {
     FETCH,
     STORE,
     PRINT,
+    LT,
+    BT,
     JMP,
     JZ,
     JNZ,
@@ -159,7 +161,18 @@ impl VM {
                             println!("{}", integer)
                         }
                         Value::STR(string) => {
-                            println!("{}", string)
+                            if string == "hiw.stack".to_string() {
+                                println!("{:?}", self.stack);
+                            } else {
+                                println!("{}", string);
+                            }
+                        }
+                        Value::BOOL(boo) => {
+                            if boo {
+                                println!("true");
+                            } else {
+                                println!("false");
+                            }
                         }
                     }
 
@@ -182,39 +195,67 @@ impl VM {
                             eprintln!("Argument is bigger program length!");
                         } else {
                             let stack_value = self.stack.pop().unwrap();
-                            if let Value::INT(unwrapped_value) = stack_value {
-                                if unwrapped_value == 0 {
+                            if let Value::BOOL(unwrapped_value) = stack_value {
+                                if unwrapped_value == true {
                                     pc = jump_code as usize
                                 } else {
                                     pc += 1
                                 }
                             } else {
-                                eprintln!("Stack value at the top is not NUMBER!");
+                                eprintln!("Stack value at the top is not BOOL!");
                             }
                         }
                     } else {
                         eprintln!("Argument must be number!");
                     }
                 }
-                Operations::JZ => {
+                Operations::JNZ => {
                     if let Operations::ARG(Value::INT(jump_code)) = arg {
                         if jump_code as usize > self.program.len() {
                             eprintln!("Argument is bigger program length!");
                         } else {
                             let stack_value = self.stack.pop().unwrap();
-                            if let Value::INT(unwrapped_value) = stack_value {
-                                if unwrapped_value == 0 {
+                            if let Value::BOOL(unwrapped_value) = stack_value {
+                                if unwrapped_value != true {
                                     pc = jump_code as usize
                                 } else {
                                     pc += 1
                                 }
                             } else {
-                                eprintln!("Stack value at the top is not NUMBER!");
+                                eprintln!("Stack value at the top is not BOOL!");
                             }
                         }
                     } else {
                         eprintln!("Argument must be number!");
                     }
+                }
+                Operations::LT => {
+                    let right_stack = self.stack.pop().unwrap();
+                    let left_stack = self.stack.pop().unwrap();
+
+                    if let (Value::INT(left), Value::INT(right)) = (left_stack, right_stack) {
+                        if left < right {
+                            self.stack.push(Value::BOOL(true));
+                        } else {
+                            self.stack.push(Value::BOOL(false));
+                        }
+                    }
+
+                    pc += 1
+                }
+                Operations::BT => {
+                    let right_stack = self.stack.pop().unwrap();
+                    let left_stack = self.stack.pop().unwrap();
+
+                    if let (Value::INT(left), Value::INT(right)) = (left_stack, right_stack) {
+                        if left > right {
+                            self.stack.push(Value::BOOL(true));
+                        } else {
+                            self.stack.push(Value::BOOL(false));
+                        }
+                    }
+
+                    pc += 1
                 }
                 _ => {
                     eprintln!("Undefined operation with number {}! Skipping...", pc);

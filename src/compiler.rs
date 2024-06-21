@@ -57,6 +57,16 @@ impl Compiler {
                 self.compile(*node.op1.clone().unwrap());
                 self.gen(Operations::PRINT);
             }
+            Kind::LT => {
+                self.compile(*node.op1.clone().unwrap());
+                self.compile(*node.op2.clone().unwrap());
+                self.gen(Operations::LT);
+            }
+            Kind::BT => {
+                self.compile(*node.op1.clone().unwrap());
+                self.compile(*node.op2.clone().unwrap());
+                self.gen(Operations::BT);
+            }
             Kind::PROG | Kind::EXPR => {
                 if let Some(op1) = node.op1 {
                     self.compile(*op1);

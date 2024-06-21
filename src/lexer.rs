@@ -9,6 +9,8 @@ pub enum Token {
     NUM,
     STR,
     ID,
+    TRUE,
+    FALSE,
     PLUS,
     MINUS,
     EQUAL,
@@ -21,6 +23,8 @@ pub enum Token {
     DOT,
     COMMA,
     COLON,
+    LESS,
+    BIGGER,
     PRINT,
     EOF,
 }
@@ -29,6 +33,7 @@ pub enum Token {
 pub enum Value {
     INT(i32),
     STR(String),
+    BOOL(bool),
 }
 
 pub struct Lexer {
@@ -58,9 +63,15 @@ impl Lexer {
             (':', Token::COLON),
             ('.', Token::DOT),
             (',', Token::COMMA),
+            ('<', Token::LESS),
+            ('>', Token::BIGGER),
         ]);
 
-        let words = HashMap::from([("print".to_string(), Token::PRINT)]);
+        let words = HashMap::from([
+            ("print".to_string(), Token::PRINT),
+            ("false".to_string(), Token::FALSE),
+            ("true".to_string(), Token::TRUE),
+        ]);
 
         let mut lexer = Lexer {
             symbols,
