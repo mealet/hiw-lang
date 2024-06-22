@@ -6,26 +6,37 @@ use std::process::exit;
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum Token {
+    // Types
     NUM,
     STR,
     ID,
+    // Boolean
     TRUE,
     FALSE,
+    // Operations
     PLUS,
     MINUS,
     EQUAL,
+    // Separators
     SEMICOLON,
     LPAR,
     RPAR,
+    LBRA,
+    RBRA,
+    // Signs
     QUOTE,
     EXCLAM,
     QUESTM,
     DOT,
     COMMA,
     COLON,
+    // Comparsions
     LESS,
     BIGGER,
+    // Functions and Constructions
     PRINT,
+    IF,
+    // End Of File
     EOF,
 }
 
@@ -36,6 +47,7 @@ pub enum Value {
     BOOL(bool),
 }
 
+#[derive(Debug, Clone)]
 pub struct Lexer {
     pub symbols: HashMap<char, Token>,
     pub words: HashMap<String, Token>,
@@ -65,12 +77,15 @@ impl Lexer {
             (',', Token::COMMA),
             ('<', Token::LESS),
             ('>', Token::BIGGER),
+            ('{', Token::LBRA),
+            ('}', Token::RBRA),
         ]);
 
         let words = HashMap::from([
             ("print".to_string(), Token::PRINT),
             ("false".to_string(), Token::FALSE),
             ("true".to_string(), Token::TRUE),
+            ("if".to_string(), Token::IF),
         ]);
 
         let mut lexer = Lexer {

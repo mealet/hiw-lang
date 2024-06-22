@@ -197,7 +197,7 @@ impl VM {
                                 if unwrapped_value == true {
                                     pc = jump_code as usize
                                 } else {
-                                    pc += 1
+                                    pc += 2
                                 }
                             } else {
                                 eprintln!("Stack value at the top is not BOOL!");
@@ -217,7 +217,7 @@ impl VM {
                                 if unwrapped_value != true {
                                     pc = jump_code as usize
                                 } else {
-                                    pc += 1
+                                    pc += 2
                                 }
                             } else {
                                 eprintln!("Stack value at the top is not BOOL!");
@@ -328,7 +328,7 @@ impl VM {
 
     pub fn fetch(&mut self, varname: String) {
         if !(self.variables.contains_key(varname.as_str())) {
-            eprintln!("Variable '{}' does not exists!", varname);
+            eprintln!("Variable '{}' is not defined!", varname);
             return;
         }
 

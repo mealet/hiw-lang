@@ -10,17 +10,23 @@ use crate::lexer::{Token, Value};
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum Kind {
+    // Types
     VAR,
     CONST,
     STRING,
+    BOOL,
+    EMPTY,
+    // Operations
     ADD,
     SUB,
     SET,
+    // Comparsions
     LT,
     BT,
-    BOOL,
+    // Functions and Constructions
     PRINT,
-    EMPTY,
+    IF,
+    // Etc.
     PROG,
     EXPR,
 }
@@ -99,7 +105,6 @@ impl Parser {
                 self.lexer.next_token();
                 return node;
             }
-
             _ => return self.paren_expression(),
         }
     }
@@ -161,17 +166,18 @@ impl Parser {
     }
 
     fn paren_expression(&mut self) -> Node {
-        let token = self.lexer.token.clone().unwrap();
-
-        // if token != Token::LPAR {
-        // self.error("'(' expected!".to_string());
-        // }
         self.lexer.next_token();
         let node = self.expression();
-        // if self.lexer.token.unwrap() != Token::RPAR {
-        // self.error("')' expected".to_string());
-        // }
         self.lexer.next_token();
+
+        return node;
+    }
+
+    fn brack_expression(&mut self) -> Node {
+        self.lexer.next_token();
+        let node = self.statement();
+        self.lexer.next_token();
+
         return node;
     }
 
@@ -215,6 +221,20 @@ impl Parser {
                     None,
                     None,
                 );
+            }
+            Token::IF => {
+                self.lexer.next_token();
+                node = Node::new(
+                    Kind::IF,
+                    None,
+                    Some(Box::new(self.paren_expression())),
+                    None,
+                    None,
+                );
+
+                node.op2 = Some(Box::new(self.brack_expression()));
+
+                self.lexer.next_token();
             }
             _ => {
                 node = Node::new(

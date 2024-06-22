@@ -67,6 +67,24 @@ impl Compiler {
                 self.compile(*node.op2.clone().unwrap());
                 self.gen(Operations::BT);
             }
+            Kind::IF => {
+                self.compile(*node.op1.clone().unwrap());
+
+                self.gen(Operations::JZ);
+                self.gen(Operations::ARG(Value::INT(self.pc + 2)));
+
+                let else_adress = self.pc;
+
+                self.gen(Operations::JMP);
+                self.gen(Operations::ARG(Value::INT(0)));
+
+                self.compile(*node.op2.clone().unwrap());
+
+                let after_adress = self.pc;
+
+                self.program[(else_adress + 1) as usize] =
+                    Operations::ARG(Value::INT(after_adress));
+            }
             Kind::PROG | Kind::EXPR => {
                 if let Some(op1) = node.op1 {
                     self.compile(*op1);
