@@ -71,7 +71,7 @@ impl Compiler {
                 self.compile(*node.op1.clone().unwrap());
 
                 self.gen(Operations::JZ);
-                self.gen(Operations::ARG(Value::INT(self.pc + 2)));
+                self.gen(Operations::ARG(Value::INT(self.pc + 3)));
 
                 let else_adress = self.pc;
 

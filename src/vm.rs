@@ -180,11 +180,13 @@ impl VM {
                     if let Operations::ARG(Value::INT(jump_code)) = arg {
                         if jump_code as usize > self.program.len() {
                             eprintln!("Argument is bigger program length!");
+                            pc += 2;
                         } else {
                             pc = jump_code as usize;
                         }
                     } else {
                         eprintln!("Argument must be number!");
+                        pc += 2;
                     }
                 }
                 Operations::JZ => {
@@ -256,7 +258,10 @@ impl VM {
                     pc += 1
                 }
                 _ => {
-                    eprintln!("Undefined operation with number {}! Skipping...", pc);
+                    eprintln!(
+                        "Undefined operation with number {:?}! Skipping...",
+                        &self.program[pc]
+                    );
                     pc += 1
                 }
             }
