@@ -16,6 +16,8 @@ pub enum Token {
     // Operations
     PLUS,
     MINUS,
+    MULTIPLY,
+    DIVIDE,
     EQUAL,
     // Separators
     SEMICOLON,
@@ -37,6 +39,7 @@ pub enum Token {
     PRINT,
     IF,
     ELSE,
+    WHILE,
     // End Of File
     EOF,
 }
@@ -68,6 +71,8 @@ impl Lexer {
             (')', Token::RPAR),
             ('+', Token::PLUS),
             ('-', Token::MINUS),
+            ('*', Token::MULTIPLY),
+            ('/', Token::DIVIDE),
             ('=', Token::EQUAL),
             (';', Token::SEMICOLON),
             ('"', Token::QUOTE),
@@ -88,6 +93,7 @@ impl Lexer {
             ("true".to_string(), Token::TRUE),
             ("if".to_string(), Token::IF),
             ("else".to_string(), Token::ELSE),
+            ("while".to_string(), Token::WHILE),
         ]);
 
         let mut lexer = Lexer {

@@ -4,6 +4,7 @@
 // =====================================================
 // https://github.com/mealet
 
+#[allow(unused, dead_code)]
 mod binary_compiler;
 mod compiler;
 mod filereader;
@@ -34,7 +35,7 @@ fn main() {
     // Creating Lexer Analyzer
 
     let input = filereader::get_code(args[1].clone());
-    let mut lexer = lexer::Lexer::new(input);
+    let lexer = lexer::Lexer::new(input);
 
     // Parsing Lexer Tokens
 
@@ -66,8 +67,9 @@ fn main() {
     }
 }
 
-// TODO: Add while cycle
-// TODO: Add multiply and divide operations
+// TODO: Add some built-in functions (sin, cos, tg, ctg, abs, int, string, bool, input, type)
+// TODO: Add creating custom functions
+// TODO: Add arrays (dynamic)
 
 // Tests
 #[cfg(test)]

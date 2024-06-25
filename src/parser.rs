@@ -19,6 +19,8 @@ pub enum Kind {
     // Operations
     ADD,
     SUB,
+    MULT,
+    DIV,
     SET,
     // Comparsions
     LT,
@@ -28,6 +30,7 @@ pub enum Kind {
     PRINT,
     IF,
     IF_ELSE,
+    WHILE,
     // Etc.
     SEQ,
     PROG,
@@ -118,10 +121,14 @@ impl Parser {
 
         while self.lexer.token.clone().unwrap() == Token::PLUS
             || self.lexer.token.clone().unwrap() == Token::MINUS
+            || self.lexer.token.clone().unwrap() == Token::MULTIPLY
+            || self.lexer.token.clone().unwrap() == Token::DIVIDE
         {
             match self.lexer.token.clone().unwrap() {
                 Token::PLUS => kind = Kind::ADD,
                 Token::MINUS => kind = Kind::SUB,
+                Token::MULTIPLY => kind = Kind::MULT,
+                Token::DIVIDE => kind = Kind::DIV,
                 _ => {}
             }
 
@@ -251,6 +258,18 @@ impl Parser {
                     self.lexer.next_token();
                     node.op3 = Some(Box::new(self.statement()));
                 }
+
+                self.lexer.next_token();
+            }
+            Token::WHILE => {
+                self.lexer.next_token();
+                node = Node::new(
+                    Kind::WHILE,
+                    None,
+                    Some(Box::new(self.paren_expression())),
+                    Some(Box::new(self.statement())),
+                    None,
+                );
 
                 self.lexer.next_token();
             }

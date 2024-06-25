@@ -26,6 +26,7 @@ impl Compiler {
 
     pub fn compile(&mut self, node: Node) -> Vec<Operations> {
         match node.kind {
+            // Types
             Kind::VAR => {
                 self.gen(Operations::FETCH);
                 self.gen(Operations::ARG(node.value.unwrap()));
@@ -38,6 +39,8 @@ impl Compiler {
                 self.gen(Operations::PUSH);
                 self.gen(Operations::ARG(node.value.unwrap()));
             }
+
+            // Operations
             Kind::ADD => {
                 self.compile(*node.op1.clone().unwrap());
                 self.compile(*node.op2.clone().unwrap());
@@ -48,29 +51,26 @@ impl Compiler {
                 self.compile(*node.op2.clone().unwrap());
                 self.gen(Operations::SUB);
             }
+            Kind::MULT => {
+                self.compile(*node.op1.clone().unwrap());
+                self.compile(*node.op2.clone().unwrap());
+                self.gen(Operations::MULT);
+            }
+            Kind::DIV => {
+                self.compile(*node.op1.clone().unwrap());
+                self.compile(*node.op2.clone().unwrap());
+                self.gen(Operations::DIV);
+            }
             Kind::SET => {
                 self.compile(*node.op2.clone().unwrap());
                 self.gen(Operations::STORE);
                 self.gen(Operations::ARG(node.op1.clone().unwrap().value.unwrap()));
             }
+
+            // Functions and Constructions
             Kind::PRINT => {
                 self.compile(*node.op1.clone().unwrap());
                 self.gen(Operations::PRINT);
-            }
-            Kind::LT => {
-                self.compile(*node.op1.clone().unwrap());
-                self.compile(*node.op2.clone().unwrap());
-                self.gen(Operations::LT);
-            }
-            Kind::BT => {
-                self.compile(*node.op1.clone().unwrap());
-                self.compile(*node.op2.clone().unwrap());
-                self.gen(Operations::BT);
-            }
-            Kind::EQ => {
-                self.compile(*node.op1.clone().unwrap());
-                self.compile(*node.op2.clone().unwrap());
-                self.gen(Operations::EQ);
             }
             Kind::IF => {
                 self.compile(*node.op1.clone().unwrap());
@@ -120,6 +120,45 @@ impl Compiler {
                 self.program[(complete_adress + 1) as usize] =
                     Operations::ARG(Value::INT(after_adress));
             }
+            Kind::WHILE => {
+                let condition_adress = self.pc;
+
+                self.compile(*node.op1.clone().unwrap());
+
+                self.gen(Operations::JZ);
+                self.gen(Operations::ARG(Value::INT(self.pc + 3)));
+
+                let false_jmp_adress = self.pc;
+
+                self.gen(Operations::JMP);
+                self.gen(Operations::ARG(Value::INT(0)));
+
+                self.compile(*node.op2.clone().unwrap());
+
+                self.gen(Operations::JMP);
+                self.gen(Operations::ARG(Value::INT(condition_adress)));
+
+                self.program[(false_jmp_adress + 1) as usize] =
+                    Operations::ARG(Value::INT(self.pc));
+            }
+            // Conditions
+            Kind::LT => {
+                self.compile(*node.op1.clone().unwrap());
+                self.compile(*node.op2.clone().unwrap());
+                self.gen(Operations::LT);
+            }
+            Kind::BT => {
+                self.compile(*node.op1.clone().unwrap());
+                self.compile(*node.op2.clone().unwrap());
+                self.gen(Operations::BT);
+            }
+            Kind::EQ => {
+                self.compile(*node.op1.clone().unwrap());
+                self.compile(*node.op2.clone().unwrap());
+                self.gen(Operations::EQ);
+            }
+
+            // Etc.
             Kind::SEQ => {
                 self.compile(*node.op1.clone().unwrap());
                 self.compile(*node.op2.clone().unwrap());

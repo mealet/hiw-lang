@@ -286,8 +286,8 @@ impl VM {
     // Commands
 
     pub fn add(&mut self) {
-        let _a = self.stack.pop().expect("Stack error");
         let _b = self.stack.pop().expect("Stack error");
+        let _a = self.stack.pop().expect("Stack error");
 
         if let (Value::INT(a), Value::INT(b)) = (_a, _b) {
             self.stack.push(Value::INT(a + b));
@@ -297,8 +297,8 @@ impl VM {
     }
 
     pub fn sub(&mut self) {
-        let _a = self.stack.pop().expect("Stack error");
         let _b = self.stack.pop().expect("Stack error");
+        let _a = self.stack.pop().expect("Stack error");
 
         if let (Value::INT(a), Value::INT(b)) = (_a, _b) {
             self.stack.push(Value::INT(a / b));
@@ -308,8 +308,8 @@ impl VM {
     }
 
     pub fn mult(&mut self) {
-        let _a = self.stack.pop().expect("Stack error");
         let _b = self.stack.pop().expect("Stack error");
+        let _a = self.stack.pop().expect("Stack error");
 
         if let (Value::INT(a), Value::INT(b)) = (_a, _b) {
             self.stack.push(Value::INT(a * b));
@@ -319,8 +319,8 @@ impl VM {
     }
 
     pub fn div(&mut self) {
-        let _a = self.stack.pop().expect("Stack error");
         let _b = self.stack.pop().expect("Stack error");
+        let _a = self.stack.pop().expect("Stack error");
 
         if let (Value::INT(a), Value::INT(b)) = (_a, _b) {
             self.stack.push(Value::INT(a / b));
