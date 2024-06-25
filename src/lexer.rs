@@ -36,6 +36,7 @@ pub enum Token {
     // Functions and Constructions
     PRINT,
     IF,
+    ELSE,
     // End Of File
     EOF,
 }
@@ -86,6 +87,7 @@ impl Lexer {
             ("false".to_string(), Token::FALSE),
             ("true".to_string(), Token::TRUE),
             ("if".to_string(), Token::IF),
+            ("else".to_string(), Token::ELSE),
         ]);
 
         let mut lexer = Lexer {

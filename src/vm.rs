@@ -29,6 +29,7 @@ pub enum Operations {
     PRINT,
     LT,
     BT,
+    EQ,
     JMP,
     JZ,
     JNZ,
@@ -257,6 +258,18 @@ impl VM {
 
                     pc += 1
                 }
+                Operations::EQ => {
+                    let right_stack = self.stack.pop().unwrap();
+                    let left_stack = self.stack.pop().unwrap();
+
+                    if left_stack == right_stack {
+                        self.stack.push(Value::BOOL(true));
+                    } else {
+                        self.stack.push(Value::BOOL(false));
+                    }
+
+                    pc += 1;
+                }
                 _ => {
                     eprintln!(
                         "Undefined operation with number {:?}! Skipping...",
@@ -338,8 +351,6 @@ impl VM {
         }
 
         let variable_value = self.variables[varname.as_str()].clone();
-        let _ = self.variables.remove(varname.as_str());
-
         let _ = self.stack.push(variable_value);
     }
 

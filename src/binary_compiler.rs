@@ -33,6 +33,7 @@ pub enum Operations {
     PRINT,
     LT,
     BT,
+    EQ,
     JMP,
     JZ,
     JNZ,
@@ -164,13 +165,11 @@ impl VM {
                         Value::INT(integer) => {
                             println!("{}", integer)
                         }
-                        Value::STR(string) => {
-                            if string == "hiw.stack".to_string() {
-                                println!("{:?}", self.stack);
-                            } else {
-                                println!("{}", string);
-                            }
-                        }
+                        Value::STR(string) => match string.as_str() {
+                            "::stack" => println!("{:?}", self.stack.clone()),
+                            "::var" => println!("{:?}", self.variables.clone()),
+                            _ => println!("{}", string),
+                        },
                         Value::BOOL(boo) => {
                             if boo {
                                 println!("true");
@@ -186,11 +185,13 @@ impl VM {
                     if let Operations::ARG(Value::INT(jump_code)) = arg {
                         if jump_code as usize > self.program.len() {
                             eprintln!("Argument is bigger program length!");
+                            pc += 2;
                         } else {
                             pc = jump_code as usize;
                         }
                     } else {
                         eprintln!("Argument must be number!");
+                        pc += 2;
                     }
                 }
                 Operations::JZ => {
@@ -203,7 +204,7 @@ impl VM {
                                 if unwrapped_value == true {
                                     pc = jump_code as usize
                                 } else {
-                                    pc += 1
+                                    pc += 2
                                 }
                             } else {
                                 eprintln!("Stack value at the top is not BOOL!");
@@ -223,7 +224,7 @@ impl VM {
                                 if unwrapped_value != true {
                                     pc = jump_code as usize
                                 } else {
-                                    pc += 1
+                                    pc += 2
                                 }
                             } else {
                                 eprintln!("Stack value at the top is not BOOL!");
@@ -261,8 +262,23 @@ impl VM {
 
                     pc += 1
                 }
+                Operations::EQ => {
+                    let right_stack = self.stack.pop().unwrap();
+                    let left_stack = self.stack.pop().unwrap();
+
+                    if left_stack == right_stack {
+                        self.stack.push(Value::BOOL(true));
+                    } else {
+                        self.stack.push(Value::BOOL(false));
+                    }
+
+                    pc += 1;
+                }
                 _ => {
-                    eprintln!("Undefined operation with number {}! Skipping...", pc);
+                    eprintln!(
+                        "Undefined operation with number {:?}! Skipping...",
+                        &self.program[pc]
+                    );
                     pc += 1
                 }
             }
@@ -334,13 +350,11 @@ impl VM {
 
     pub fn fetch(&mut self, varname: String) {
         if !(self.variables.contains_key(varname.as_str())) {
-            eprintln!("Variable '{}' does not exists!", varname);
+            eprintln!("Variable '{}' is not defined!", varname);
             return;
         }
 
         let variable_value = self.variables[varname.as_str()].clone();
-        let _ = self.variables.remove(varname.as_str());
-
         let _ = self.stack.push(variable_value);
     }
 
@@ -384,6 +398,7 @@ impl fmt::Display for Operations {
             Operations::PRINT => "Operations::PRINT".to_string(),
             Operations::LT => "Operations::LT".to_string(),
             Operations::BT => "Operations::BT".to_string(),
+            Operations::EQ => "Operations::EQ".to_string(),
         };
         write!(f, "{}", s)
     }
@@ -427,8 +442,6 @@ fn main() {{
             .arg(&filenames[0])
             .output()
             .expect("Cannot compile VM");
-
-        println!("{}", String::from_utf8_lossy(&compiler.stderr));
 
         for fname in filenames {
             let _ = std::fs::remove_file(fname);

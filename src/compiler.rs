@@ -67,6 +67,11 @@ impl Compiler {
                 self.compile(*node.op2.clone().unwrap());
                 self.gen(Operations::BT);
             }
+            Kind::EQ => {
+                self.compile(*node.op1.clone().unwrap());
+                self.compile(*node.op2.clone().unwrap());
+                self.gen(Operations::EQ);
+            }
             Kind::IF => {
                 self.compile(*node.op1.clone().unwrap());
 
@@ -84,6 +89,40 @@ impl Compiler {
 
                 self.program[(else_adress + 1) as usize] =
                     Operations::ARG(Value::INT(after_adress));
+            }
+            Kind::IF_ELSE => {
+                self.compile(*node.op1.clone().unwrap());
+
+                self.gen(Operations::JZ);
+                self.gen(Operations::ARG(Value::INT(self.pc + 3)));
+
+                let else_jmp_adress = self.pc;
+
+                self.gen(Operations::JMP);
+                self.gen(Operations::ARG(Value::INT(0)));
+
+                self.compile(*node.op2.clone().unwrap());
+
+                let complete_adress = self.pc;
+
+                self.gen(Operations::JMP);
+                self.gen(Operations::ARG(Value::INT(0)));
+
+                let else_adress = self.pc;
+
+                self.compile(*node.op3.clone().unwrap());
+
+                let after_adress = self.pc;
+
+                self.program[(else_jmp_adress + 1) as usize] =
+                    Operations::ARG(Value::INT(else_adress));
+
+                self.program[(complete_adress + 1) as usize] =
+                    Operations::ARG(Value::INT(after_adress));
+            }
+            Kind::SEQ => {
+                self.compile(*node.op1.clone().unwrap());
+                self.compile(*node.op2.clone().unwrap());
             }
             Kind::PROG | Kind::EXPR => {
                 if let Some(op1) = node.op1 {

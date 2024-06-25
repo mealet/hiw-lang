@@ -34,7 +34,7 @@ fn main() {
     // Creating Lexer Analyzer
 
     let input = filereader::get_code(args[1].clone());
-    let lexer = lexer::Lexer::new(input);
+    let mut lexer = lexer::Lexer::new(input);
 
     // Parsing Lexer Tokens
 
@@ -67,8 +67,6 @@ fn main() {
 }
 
 // TODO: Add while cycle
-// TODO: Add IF/ELSE comparsion
-// TODO: Add float type
 // TODO: Add multiply and divide operations
 
 // Tests
