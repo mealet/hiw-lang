@@ -21,10 +21,15 @@ pub enum Token {
     EQUAL,
     // Separators
     SEMICOLON,
+
     LPAR,
     RPAR,
+
     LBRA,
     RBRA,
+
+    LBRACK,
+    RBRACK,
     // Signs
     QUOTE,
     EXCLAM,
@@ -49,6 +54,7 @@ pub enum Value {
     INT(i32),
     STR(String),
     BOOL(bool),
+    ARRAY(Vec<Value>),
 }
 
 #[derive(Debug, Clone)]
@@ -85,6 +91,8 @@ impl Lexer {
             ('>', Token::BIGGER),
             ('{', Token::LBRA),
             ('}', Token::RBRA),
+            ('[', Token::LBRACK),
+            (']', Token::RBRACK),
         ]);
 
         let words = HashMap::from([

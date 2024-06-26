@@ -15,6 +15,7 @@ pub enum Kind {
     CONST,
     STRING,
     BOOL,
+    ARRAY,
     EMPTY,
     // Operations
     ADD,
@@ -31,6 +32,7 @@ pub enum Kind {
     IF,
     IF_ELSE,
     WHILE,
+    BRACK_ENUM,
     // Etc.
     SEQ,
     PROG,
@@ -110,6 +112,20 @@ impl Parser {
                 let node = Node::new(Kind::STRING, Some(Value::STR(ident)), None, None, None);
                 self.lexer.next_token();
                 return node;
+            }
+            Token::TRUE => {
+                let node = Node::new(Kind::BOOL, Some(Value::BOOL(true)), None, None, None);
+                self.lexer.next_token();
+                return node;
+            }
+            Token::FALSE => {
+                let node = Node::new(Kind::BOOL, Some(Value::BOOL(false)), None, None, None);
+                self.lexer.next_token();
+                return node;
+            }
+            Token::COMMA => {
+                self.lexer.next_token();
+                return self.expression();
             }
             _ => return self.paren_expression(),
         }
@@ -203,6 +219,10 @@ impl Parser {
     fn expression(&mut self) -> Node {
         let token = self.lexer.token.clone().unwrap();
 
+        if token == Token::LBRACK {
+            return self.statement();
+        }
+
         if token != Token::ID {
             return self.test();
         }
@@ -289,6 +309,26 @@ impl Parser {
 
                 self.lexer.next_token()
             }
+            Token::LBRACK => {
+                node = Node::new(Kind::ARRAY, None, None, None, None);
+                self.lexer.next_token();
+
+                let mut temp_node = Node::new(Kind::EMPTY, None, None, None, None);
+
+                while self.lexer.token.unwrap() != Token::RBRACK {
+                    temp_node = Node::new(
+                        Kind::BRACK_ENUM,
+                        None,
+                        Some(Box::new(temp_node.clone())),
+                        Some(Box::new(self.expression())),
+                        None,
+                    );
+                }
+
+                node.op1 = Some(Box::new(temp_node));
+
+                self.lexer.next_token();
+            }
             _ => {
                 node = Node::new(
                     Kind::EXPR,
@@ -300,6 +340,7 @@ impl Parser {
 
                 if self.lexer.token.clone().unwrap() != Token::SEMICOLON {
                     println!("{:?}", self.lexer.token);
+                    println!("{:?}", self.lexer.value);
                     self.error("';' expected".to_string());
                 }
                 self.lexer.next_token()

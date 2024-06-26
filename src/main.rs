@@ -69,7 +69,9 @@ fn main() {
 
 // TODO: Add some built-in functions (sin, cos, tg, ctg, abs, int, string, bool, input, type)
 // TODO: Add creating custom functions
-// TODO: Add arrays (dynamic)
+
+// FIXME: Cannot add string or any other type to array (getting looped)
+// TODO: Add getting values from arrays
 
 // Tests
 #[cfg(test)]

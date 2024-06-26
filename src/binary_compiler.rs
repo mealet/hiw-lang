@@ -20,6 +20,7 @@ pub enum Value {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Operations {
     PUSH,
+    ARR,
     ADD,
     SUB,
     DIV,
@@ -88,7 +89,6 @@ impl VM {
                     self.push(arg);
                     pc += 2
                 }
-                Operations::HALT => break,
                 Operations::VAR => {
                     // if arg == Operations::ARG( Value::INT(arg) ) {
                     //     eprintln!("Cannot create variable with number as a name!");
@@ -176,6 +176,26 @@ impl VM {
                             } else {
                                 println!("false");
                             }
+                        }
+                        Value::ARRAY(array) => {
+                            print!("\n[");
+
+                            for (index, item) in array.iter().enumerate() {
+                                let printable_value = match item {
+                                    Value::INT(i) => &i.to_string(),
+                                    Value::STR(s) => s,
+                                    Value::BOOL(b) => &b.to_string(),
+                                    Value::ARRAY(_) => &("ERR".to_string()),
+                                };
+
+                                print!("{}", printable_value);
+
+                                if index != array.len() - 1 {
+                                    print!(",");
+                                }
+                            }
+
+                            print!("]");
                         }
                     }
 
@@ -274,6 +294,23 @@ impl VM {
 
                     pc += 1;
                 }
+                Operations::ARR => {
+                    let mut array_result = Vec::new();
+
+                    for i in self.stack.clone().iter() {
+                        array_result.push(i.clone());
+                        self.stack.pop();
+                    }
+
+                    for _ in 0..self.stack.len() {
+                        array_result.push(self.stack.pop().unwrap());
+                    }
+
+                    self.stack.push(Value::ARRAY(array_result));
+
+                    pc += 1;
+                }
+                Operations::HALT => break,
                 _ => {
                     eprintln!(
                         "Undefined operation with number {:?}! Skipping...",
@@ -374,6 +411,7 @@ impl fmt::Display for Value {
             Value::INT(i) => write!(f, "Value::INT({})", i),
             Value::STR(s) => write!(f, "Value::STR(\"{}\".to_string())", s),
             Value::BOOL(b) => write!(f, "Value::BOOL({})", b),
+            Value::ARRAY(a) => write!(f, "Value::ARRAY({:?})", a),
         }
     }
 }
@@ -399,6 +437,7 @@ impl fmt::Display for Operations {
             Operations::LT => "Operations::LT".to_string(),
             Operations::BT => "Operations::BT".to_string(),
             Operations::EQ => "Operations::EQ".to_string(),
+            Operations::ARR => "Operations::ARR".to_string(),
         };
         write!(f, "{}", s)
     }

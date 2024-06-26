@@ -39,6 +39,15 @@ impl Compiler {
                 self.gen(Operations::PUSH);
                 self.gen(Operations::ARG(node.value.unwrap()));
             }
+            Kind::BOOL => {
+                self.gen(Operations::PUSH);
+                self.gen(Operations::ARG(node.value.unwrap()));
+            }
+            Kind::ARRAY => {
+                self.compile(*node.op1.clone().unwrap());
+
+                self.gen(Operations::ARR);
+            }
 
             // Operations
             Kind::ADD => {
@@ -141,6 +150,11 @@ impl Compiler {
                 self.program[(false_jmp_adress + 1) as usize] =
                     Operations::ARG(Value::INT(self.pc));
             }
+            Kind::BRACK_ENUM => {
+                self.compile(*node.op1.clone().unwrap());
+                self.compile(*node.op2.clone().unwrap());
+            }
+
             // Conditions
             Kind::LT => {
                 self.compile(*node.op1.clone().unwrap());

@@ -3,6 +3,7 @@
 
 use crate::lexer::Value;
 use std::collections::HashMap;
+use std::io::{stdout, Write};
 
 type PROGRAM = Vec<Operations>;
 
@@ -16,6 +17,7 @@ pub struct VM {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Operations {
     PUSH,
+    ARR,
     ADD,
     SUB,
     DIV,
@@ -84,7 +86,6 @@ impl VM {
                     self.push(arg);
                     pc += 2
                 }
-                Operations::HALT => break,
                 Operations::VAR => {
                     // if arg == Operations::ARG( Value::INT(arg) ) {
                     //     eprintln!("Cannot create variable with number as a name!");
@@ -172,6 +173,26 @@ impl VM {
                             } else {
                                 println!("false");
                             }
+                        }
+                        Value::ARRAY(array) => {
+                            print!("\n[");
+
+                            for (index, item) in array.iter().enumerate() {
+                                let printable_value = match item {
+                                    Value::INT(i) => &i.to_string(),
+                                    Value::STR(s) => s,
+                                    Value::BOOL(b) => &b.to_string(),
+                                    Value::ARRAY(_) => &("ERR".to_string()),
+                                };
+
+                                print!("{}", printable_value);
+
+                                if index != array.len() - 1 {
+                                    print!(",");
+                                }
+                            }
+
+                            print!("]");
                         }
                     }
 
@@ -270,6 +291,23 @@ impl VM {
 
                     pc += 1;
                 }
+                Operations::ARR => {
+                    let mut array_result = Vec::new();
+
+                    for i in self.stack.clone().iter() {
+                        array_result.push(i.clone());
+                        self.stack.pop();
+                    }
+
+                    for _ in 0..self.stack.len() {
+                        array_result.push(self.stack.pop().unwrap());
+                    }
+
+                    self.stack.push(Value::ARRAY(array_result));
+
+                    pc += 1;
+                }
+                Operations::HALT => break,
                 _ => {
                     eprintln!(
                         "Undefined operation with number {:?}! Skipping...",
