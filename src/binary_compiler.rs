@@ -183,7 +183,7 @@ impl VM {
                             for (index, item) in array.iter().enumerate() {
                                 let printable_value = match item {
                                     Value::INT(i) => &i.to_string(),
-                                    Value::STR(s) => s,
+                                    Value::STR(s) => &format!("\"{}\"", s),
                                     Value::BOOL(b) => &b.to_string(),
                                     Value::ARRAY(_) => &("ERR".to_string()),
                                 };
@@ -191,7 +191,7 @@ impl VM {
                                 print!("{}", printable_value);
 
                                 if index != array.len() - 1 {
-                                    print!(",");
+                                    print!(", ");
                                 }
                             }
 

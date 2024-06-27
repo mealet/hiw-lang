@@ -110,7 +110,7 @@ impl Parser {
                 }
 
                 let node = Node::new(Kind::STRING, Some(Value::STR(ident)), None, None, None);
-                self.lexer.next_token();
+                // self.lexer.next_token();
                 return node;
             }
             Token::TRUE => {
@@ -260,6 +260,8 @@ impl Parser {
                     None,
                     None,
                 );
+
+                self.lexer.next_token();
             }
             Token::IF => {
                 self.lexer.next_token();
@@ -339,8 +341,6 @@ impl Parser {
                 );
 
                 if self.lexer.token.clone().unwrap() != Token::SEMICOLON {
-                    println!("{:?}", self.lexer.token);
-                    println!("{:?}", self.lexer.value);
                     self.error("';' expected".to_string());
                 }
                 self.lexer.next_token()

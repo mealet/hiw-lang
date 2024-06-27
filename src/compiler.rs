@@ -80,6 +80,13 @@ impl Compiler {
             Kind::PRINT => {
                 self.compile(*node.op1.clone().unwrap());
                 self.gen(Operations::PRINT);
+
+                if let Some(node_2) = node.op2.clone() {
+                    self.compile(*node_2);
+                }
+                if let Some(node_3) = node.op3.clone() {
+                    self.compile(*node_3);
+                }
             }
             Kind::IF => {
                 self.compile(*node.op1.clone().unwrap());
@@ -173,6 +180,17 @@ impl Compiler {
             }
 
             // Etc.
+            Kind::EMPTY => {
+                if let Some(op1) = node.op1 {
+                    self.compile(*op1);
+                }
+                if let Some(op2) = node.op2 {
+                    self.compile(*op2);
+                }
+                if let Some(op3) = node.op3 {
+                    self.compile(*op3);
+                }
+            }
             Kind::SEQ => {
                 self.compile(*node.op1.clone().unwrap());
                 self.compile(*node.op2.clone().unwrap());
