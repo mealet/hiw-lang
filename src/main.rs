@@ -78,5 +78,3 @@ fn main() {
 // TODO: Add some built-in functions (sin, cos, tg, ctg, abs, int, string, bool, input, type)
 // TODO: Add creating custom functions
 // TODO: Add getting values from arrays
-
-// FIXME: Cannot add string or any other type to array (getting looped)

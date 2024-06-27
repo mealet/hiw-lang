@@ -309,7 +309,11 @@ impl Parser {
                     )
                 }
 
-                self.lexer.next_token()
+                self.lexer.next_token();
+
+                if self.lexer.token != Some(Token::SEMICOLON) {
+                    self.error("';' expected after '}'".to_string());
+                }
             }
             Token::LBRACK => {
                 node = Node::new(Kind::ARRAY, None, None, None, None);
@@ -341,7 +345,7 @@ impl Parser {
                 );
 
                 if self.lexer.token.clone().unwrap() != Token::SEMICOLON {
-                    self.error("';' expected".to_string());
+                    self.error("';' expected after expression".to_string());
                 }
                 self.lexer.next_token()
             }
