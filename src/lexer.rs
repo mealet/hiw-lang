@@ -121,7 +121,7 @@ impl Lexer {
     }
 
     fn error(&self, message: String) {
-        eprintln!("Lexer error: {}", message);
+        eprintln!("[AnalyzerError]: {}", message);
         exit(1);
     }
 

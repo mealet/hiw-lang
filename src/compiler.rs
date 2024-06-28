@@ -157,9 +157,16 @@ impl Compiler {
                 self.program[(false_jmp_adress + 1) as usize] =
                     Operations::ARG(Value::INT(self.pc));
             }
+
             Kind::BRACK_ENUM => {
                 self.compile(*node.op1.clone().unwrap());
                 self.compile(*node.op2.clone().unwrap());
+            }
+            Kind::SLICE => {
+                self.compile(*node.op1.clone().unwrap());
+                self.compile(*node.op2.clone().unwrap());
+
+                self.gen(Operations::SLICE);
             }
 
             // Conditions

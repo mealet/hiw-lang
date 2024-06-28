@@ -32,7 +32,9 @@ pub enum Kind {
     IF,
     IF_ELSE,
     WHILE,
+
     BRACK_ENUM,
+    SLICE,
     // Etc.
     SEQ,
     PROG,
@@ -69,8 +71,8 @@ impl Parser {
         Parser { lexer }
     }
 
-    fn error(&self, message: String) {
-        println!("Parser Error: {}", message);
+    fn error(&self, message: &str) {
+        println!("[ParseError]: {}", message);
         std::process::exit(1);
     }
 
@@ -79,7 +81,7 @@ impl Parser {
 
         match token {
             Token::ID => {
-                let node = Node::new(
+                let mut node = Node::new(
                     Kind::VAR,
                     Some(self.lexer.value.clone().unwrap()),
                     None,
@@ -87,10 +89,25 @@ impl Parser {
                     None,
                 );
                 self.lexer.next_token();
+
+                if self.lexer.token == Some(Token::LBRACK) {
+                    self.lexer.next_token();
+
+                    node = Node::new(
+                        Kind::SLICE,
+                        None,
+                        Some(Box::new(node.clone())),
+                        Some(Box::new(self.expression())),
+                        None,
+                    );
+
+                    self.lexer.next_token();
+                }
+
                 return node;
             }
             Token::NUM => {
-                let node = Node::new(
+                let mut node = Node::new(
                     Kind::CONST,
                     Some(self.lexer.value.clone().unwrap()),
                     None,
@@ -98,6 +115,21 @@ impl Parser {
                     None,
                 );
                 self.lexer.next_token();
+
+                if self.lexer.token == Some(Token::LBRACK) {
+                    self.lexer.next_token();
+
+                    node = Node::new(
+                        Kind::SLICE,
+                        None,
+                        Some(Box::new(node.clone())),
+                        Some(Box::new(self.expression())),
+                        None,
+                    );
+
+                    self.lexer.next_token();
+                }
+
                 return node;
             }
             Token::STR => {
@@ -109,8 +141,8 @@ impl Parser {
                     self.lexer.next_token();
                 }
 
-                let node = Node::new(Kind::STRING, Some(Value::STR(ident)), None, None, None);
-                // self.lexer.next_token();
+                let mut node = Node::new(Kind::STRING, Some(Value::STR(ident)), None, None, None);
+
                 return node;
             }
             Token::TRUE => {
@@ -311,8 +343,10 @@ impl Parser {
 
                 self.lexer.next_token();
 
-                if self.lexer.token != Some(Token::SEMICOLON) {
-                    self.error("';' expected after '}'".to_string());
+                match self.lexer.token {
+                    Some(Token::SEMICOLON) => {}
+                    Some(Token::ELSE) => {}
+                    _ => self.error("';' expected after '}'"),
                 }
             }
             Token::LBRACK => {
@@ -345,7 +379,8 @@ impl Parser {
                 );
 
                 if self.lexer.token.clone().unwrap() != Token::SEMICOLON {
-                    self.error("';' expected after expression".to_string());
+                    println!("{:?}", self.lexer.token);
+                    self.error("';' expected after expression");
                 }
                 self.lexer.next_token()
             }
@@ -371,29 +406,10 @@ impl Parser {
 
         if let Some(token) = self.lexer.token {
             if token != Token::EOF {
-                self.error("Invalid statement syntax".to_string());
+                self.error("Invalid statement syntax");
             }
         }
 
         return program_node;
     }
-
-    // pub fn parse(&mut self) -> Node {
-    //     self.lexer.next_token();
-    //     let program_node = Node::new(
-    //         Kind::PROG,
-    //         None,
-    //         Some(Box::new(self.statement())),
-    //         None,
-    //         None,
-    //     );
-    //
-    //     if let Some(token) = self.lexer.token {
-    //         if token != Token::EOF {
-    //             self.error("Invalid statement syntax".to_string());
-    //         }
-    //     }
-    //
-    //     return program_node;
-    // }
 }

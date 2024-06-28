@@ -18,6 +18,7 @@ pub struct VM {
 pub enum Operations {
     PUSH,
     ARR,
+    SLICE,
     ADD,
     SUB,
     DIV,
@@ -44,6 +45,11 @@ impl VM {
             program: prog,
             variables: HashMap::new(),
         }
+    }
+
+    fn error(&self, message: &str) {
+        eprintln!("[RuntimeError]: {}", message);
+        std::process::exit(1);
     }
 
     pub fn run(&mut self) -> Result<(), &str> {
@@ -92,11 +98,11 @@ impl VM {
                     // } else if arg.unwrap().len() < 1 {
                     match arg {
                         Operations::ARG(Value::INT(_)) => {
-                            eprintln!("Cannot create variable with number as a name!");
+                            self.error("Cannot create variable with NUMBER as a name!");
                         }
                         Operations::ARG(Value::STR(varname)) => {
                             if varname.len() < 1 {
-                                eprintln!("Unexpected variable name!");
+                                self.error("Unexpected variable name!");
                             } else {
                                 match subarg {
                                     Operations::ARG(t) => {
@@ -112,7 +118,7 @@ impl VM {
                             }
                         }
                         _ => {
-                            eprintln!("Undefined variable name! Skipping operations...");
+                            self.error("Undefined variable name!");
                         }
                     }
 
@@ -121,17 +127,17 @@ impl VM {
                 Operations::FETCH => {
                     match arg {
                         Operations::ARG(Value::INT(_)) => {
-                            eprintln!("Cannot fetch value from variable with number as a name!");
+                            self.error("Cannot get data from variable NUMBER as a name!");
                         }
                         Operations::ARG(Value::STR(varname)) => {
                             if varname.len() < 1 {
-                                eprintln!("Unexpected variable name!");
+                                self.error("Unexpected variable name!");
                             } else {
                                 self.fetch(varname);
                             }
                         }
                         _ => {
-                            eprintln!("Undefined operation!")
+                            self.error("Variable name must be alphanumeric!");
                         }
                     }
 
@@ -140,17 +146,17 @@ impl VM {
                 Operations::STORE => {
                     match arg {
                         Operations::ARG(Value::INT(_)) => {
-                            eprintln!("Cannot value to variable with number as a name!");
+                            self.error("Cannot store data to variable which name is number!");
                         }
                         Operations::ARG(Value::STR(varname)) => {
                             if varname.len() < 1 {
-                                eprintln!("Unexpected variable name!");
+                                self.error("Unexpected variable name!");
                             } else {
                                 self.store(varname);
                             }
                         }
                         _ => {
-                            eprintln!("Undefined operation!")
+                            self.error("Unexpected operation!");
                         }
                     }
 
@@ -201,20 +207,20 @@ impl VM {
                 Operations::JMP => {
                     if let Operations::ARG(Value::INT(jump_code)) = arg {
                         if jump_code as usize > self.program.len() {
-                            eprintln!("Argument is bigger program length!");
+                            self.error("Jump Code is bigger than byte code!");
                             pc += 2;
                         } else {
                             pc = jump_code as usize;
                         }
                     } else {
-                        eprintln!("Argument must be number!");
+                        self.error("Jump Code isn't number!");
                         pc += 2;
                     }
                 }
                 Operations::JZ => {
                     if let Operations::ARG(Value::INT(jump_code)) = arg {
                         if jump_code as usize > self.program.len() {
-                            eprintln!("Argument is bigger program length!");
+                            self.error("Jump Code is bigger than byte code!");
                         } else {
                             let stack_value = self.stack.pop().unwrap();
                             if let Value::BOOL(unwrapped_value) = stack_value {
@@ -224,17 +230,17 @@ impl VM {
                                     pc += 2
                                 }
                             } else {
-                                eprintln!("Stack value at the top is not BOOL!");
+                                self.error("Comparsion result isn't boolean!");
                             }
                         }
                     } else {
-                        eprintln!("Argument must be number!");
+                        self.error("Jump Code isn't number!");
                     }
                 }
                 Operations::JNZ => {
                     if let Operations::ARG(Value::INT(jump_code)) = arg {
                         if jump_code as usize > self.program.len() {
-                            eprintln!("Argument is bigger program length!");
+                            self.error("Jump Code is bigger than byte code!");
                         } else {
                             let stack_value = self.stack.pop().unwrap();
                             if let Value::BOOL(unwrapped_value) = stack_value {
@@ -244,7 +250,7 @@ impl VM {
                                     pc += 2
                                 }
                             } else {
-                                eprintln!("Stack value at the top is not BOOL!");
+                                self.error("Comparsion result isn't boolean!");
                             }
                         }
                     } else {
@@ -255,11 +261,36 @@ impl VM {
                     let right_stack = self.stack.pop().unwrap();
                     let left_stack = self.stack.pop().unwrap();
 
-                    if let (Value::INT(left), Value::INT(right)) = (left_stack, right_stack) {
-                        if left < right {
-                            self.stack.push(Value::BOOL(true));
-                        } else {
-                            self.stack.push(Value::BOOL(false));
+                    match (left_stack.clone(), right_stack.clone()) {
+                        (Value::INT(left), Value::INT(right)) => {
+                            if left < right {
+                                self.stack.push(Value::BOOL(true));
+                            } else {
+                                self.stack.push(Value::BOOL(false));
+                            }
+                        }
+                        (Value::STR(left), Value::STR(right)) => {
+                            if left.len() < right.len() {
+                                self.stack.push(Value::BOOL(true));
+                            } else {
+                                self.stack.push(Value::BOOL(false));
+                            }
+                        }
+                        (Value::ARRAY(left), Value::ARRAY(right)) => {
+                            if left.len() < right.len() {
+                                self.stack.push(Value::BOOL(true));
+                            } else {
+                                self.stack.push(Value::BOOL(false));
+                            }
+                        }
+                        _ => {
+                            self.error(
+                                format!(
+                                    "Cannot compare {:?} and {:?}. Unexpected types.",
+                                    left_stack, right_stack
+                                )
+                                .as_str(),
+                            );
                         }
                     }
 
@@ -269,11 +300,36 @@ impl VM {
                     let right_stack = self.stack.pop().unwrap();
                     let left_stack = self.stack.pop().unwrap();
 
-                    if let (Value::INT(left), Value::INT(right)) = (left_stack, right_stack) {
-                        if left > right {
-                            self.stack.push(Value::BOOL(true));
-                        } else {
-                            self.stack.push(Value::BOOL(false));
+                    match (left_stack.clone(), right_stack.clone()) {
+                        (Value::INT(left), Value::INT(right)) => {
+                            if left > right {
+                                self.stack.push(Value::BOOL(true));
+                            } else {
+                                self.stack.push(Value::BOOL(false));
+                            }
+                        }
+                        (Value::STR(left), Value::STR(right)) => {
+                            if left.len() > right.len() {
+                                self.stack.push(Value::BOOL(true));
+                            } else {
+                                self.stack.push(Value::BOOL(false));
+                            }
+                        }
+                        (Value::ARRAY(left), Value::ARRAY(right)) => {
+                            if left.len() > right.len() {
+                                self.stack.push(Value::BOOL(true));
+                            } else {
+                                self.stack.push(Value::BOOL(false));
+                            }
+                        }
+                        _ => {
+                            self.error(
+                                format!(
+                                    "Cannot compare {:?} and {:?}. Unexpected types.",
+                                    left_stack, right_stack
+                                )
+                                .as_str(),
+                            );
                         }
                     }
 
@@ -307,12 +363,39 @@ impl VM {
 
                     pc += 1;
                 }
+                Operations::SLICE => {
+                    // Slice from value at the top of stack
+
+                    let stack_argument = self.stack.pop().unwrap();
+                    let slicable_object = self.stack.pop().unwrap();
+
+                    arg = Operations::ARG(stack_argument);
+
+                    match arg {
+                        Operations::ARG(Value::INT(slice_index)) => match slicable_object {
+                            Value::STR(slicable_string) => {
+                                let string_vector = slicable_string.chars().collect::<Vec<_>>();
+
+                                self.stack.push(Value::STR(
+                                    string_vector[slice_index as usize].to_string(),
+                                ));
+                            }
+                            Value::ARRAY(slicable_array) => {
+                                self.stack
+                                    .push(slicable_array[slice_index as usize].clone());
+                            }
+                            _ => self.error("Cannot get slice from type exclude STR or ARRAY"),
+                        },
+                        _ => {
+                            self.error("Cannot get slice of non-integer index!");
+                        }
+                    };
+
+                    pc += 1;
+                }
                 Operations::HALT => break,
                 _ => {
-                    eprintln!(
-                        "Undefined operation with number {:?}! Skipping...",
-                        &self.program[pc]
-                    );
+                    eprintln!("Undefined operation: {:?}!", &self.program[pc]);
                     pc += 1
                 }
             }
