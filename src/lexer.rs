@@ -42,9 +42,11 @@ pub enum Token {
     BIGGER,
     // Functions and Constructions
     PRINT,
+
     IF,
     ELSE,
     WHILE,
+    DEFINE,
     // End Of File
     EOF,
 }
@@ -102,6 +104,7 @@ impl Lexer {
             ("if".to_string(), Token::IF),
             ("else".to_string(), Token::ELSE),
             ("while".to_string(), Token::WHILE),
+            ("define".to_string(), Token::DEFINE),
         ]);
 
         let mut lexer = Lexer {

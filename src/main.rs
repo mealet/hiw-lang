@@ -76,4 +76,7 @@ fn main() {
 }
 
 // TODO: Add some built-in functions (sin, cos, tg, ctg, abs, int, string, bool, input, type)
-// TODO: Add creating custom functions
+// TODO: Add custom function returning values (just push value in stack);
+//
+// Must be finished!
+// TODO: Add custom function calling

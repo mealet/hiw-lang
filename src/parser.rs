@@ -33,7 +33,11 @@ pub enum Kind {
     IF_ELSE,
     WHILE,
 
+    FUNCTION_DEFINE,
+    FUNCTION_CALL,
+
     BRACK_ENUM,
+    ARGS_ENUM,
     SLICE,
     // Etc.
     SEQ,
@@ -242,7 +246,33 @@ impl Parser {
 
     fn paren_expression(&mut self) -> Node {
         self.lexer.next_token();
+
         let node = self.expression();
+
+        self.lexer.next_token();
+
+        return node;
+    }
+
+    fn paren_arguments(&mut self) -> Node {
+        self.lexer.next_token();
+
+        let mut node = Node::new(Kind::EMPTY, None, None, None, None);
+
+        while self.lexer.token != Some(Token::RPAR) {
+            if self.lexer.token == Some(Token::COMMA) {
+                self.lexer.next_token();
+            }
+
+            node = Node::new(
+                Kind::ARGS_ENUM,
+                None,
+                Some(Box::new(node.clone())),
+                Some(Box::new(self.expression())),
+                None,
+            );
+        }
+
         self.lexer.next_token();
 
         return node;
@@ -327,11 +357,39 @@ impl Parser {
 
                 self.lexer.next_token();
             }
+            Token::DEFINE => {
+                self.lexer.next_token();
+
+                node = Node::new(
+                    Kind::FUNCTION_DEFINE,
+                    self.lexer.value.clone(),
+                    None,
+                    None,
+                    None,
+                );
+
+                self.lexer.next_token();
+
+                node.op1 = Some(Box::new(self.paren_arguments()));
+
+                match self.lexer.token {
+                    Some(Token::LBRA) => {
+                        node.op2 = Some(Box::new(self.statement()));
+                    }
+                    _ => {
+                        self.error("Expected '{' after function define");
+                    }
+                };
+            }
             Token::LBRA => {
                 node = Node::new(Kind::EMPTY, None, None, None, None);
                 self.lexer.next_token();
 
                 while self.lexer.token.unwrap() != Token::RBRA {
+                    if self.lexer.token == Some(Token::EOF) {
+                        self.error("'}' expected for ending block!");
+                    }
+
                     node = Node::new(
                         Kind::SEQ,
                         None,

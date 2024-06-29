@@ -5,16 +5,25 @@ use crate::{
     parser::{Kind, Node},
     vm::Operations,
 };
+use std::collections::HashMap;
 
 pub struct Compiler {
     program: Vec<Operations>,
+    functions: HashMap<String, crate::vm::Function>,
     pc: i32,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ByteCode {
+    pub program: Vec<Operations>,
+    pub functions: HashMap<String, crate::vm::Function>,
 }
 
 impl Compiler {
     pub fn new() -> Self {
         Compiler {
             program: Vec::new(),
+            functions: HashMap::new(),
             pc: 0,
         }
     }
@@ -24,7 +33,7 @@ impl Compiler {
         self.pc = self.pc + 1;
     }
 
-    pub fn compile(&mut self, node: Node) -> Vec<Operations> {
+    pub fn compile(&mut self, node: Node) -> ByteCode {
         match node.kind {
             // Types
             Kind::VAR => {
@@ -157,8 +166,61 @@ impl Compiler {
                 self.program[(false_jmp_adress + 1) as usize] =
                     Operations::ARG(Value::INT(self.pc));
             }
+            Kind::FUNCTION_DEFINE => {
+                let function_name = node.value.unwrap();
+
+                // getting compiled expressions
+
+                let mut args_compiler = Compiler::new();
+                let args_bytes = args_compiler
+                    .compile(*node.op1.clone().unwrap())
+                    .program
+                    .into_iter()
+                    .filter(|x| x != &Operations::FETCH)
+                    .collect::<Vec<Operations>>();
+
+                let mut program_compiler = Compiler::new();
+                let program_bytes = program_compiler
+                    .compile(*node.op2.clone().unwrap())
+                    .program
+                    .into_iter()
+                    .filter(|x| x != &Operations::HALT)
+                    .collect::<Vec<Operations>>();
+
+                // formatting args
+
+                let mut formatted_args: Vec<Value> = Vec::new();
+
+                for arg in args_bytes {
+                    match arg {
+                        Operations::ARG(val) => {
+                            formatted_args.push(val);
+                        }
+                        _ => {}
+                    }
+                }
+
+                // creating function object
+
+                let function = crate::vm::Function {
+                    name: function_name.clone(),
+                    arguments: formatted_args,
+                    program: program_bytes,
+                };
+
+                let stringify_function_name = match function_name {
+                    Value::STR(str) => str,
+                    _ => "undef".to_string(),
+                };
+
+                self.functions.insert(stringify_function_name, function);
+            }
 
             Kind::BRACK_ENUM => {
+                self.compile(*node.op1.clone().unwrap());
+                self.compile(*node.op2.clone().unwrap());
+            }
+            Kind::ARGS_ENUM => {
                 self.compile(*node.op1.clone().unwrap());
                 self.compile(*node.op2.clone().unwrap());
             }
@@ -220,6 +282,9 @@ impl Compiler {
             self.gen(Operations::HALT);
         }
 
-        self.program.clone()
+        ByteCode {
+            program: self.program.clone(),
+            functions: self.functions.clone(),
+        }
     }
 }

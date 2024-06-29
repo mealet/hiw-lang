@@ -1,6 +1,7 @@
 // VM (virtual machine) - low level "computer" that gives me tool for converting AST to byte code
 // and running it on this VM
 
+use crate::compiler::ByteCode;
 use crate::lexer::Value;
 use std::collections::HashMap;
 use std::io::{stdout, Write};
@@ -11,6 +12,7 @@ type PROGRAM = Vec<Operations>;
 pub struct VM {
     pub stack: Vec<Value>,
     pub program: PROGRAM,
+    pub functions: HashMap<String, Function>,
     pub variables: HashMap<String, Value>,
 }
 
@@ -38,12 +40,20 @@ pub enum Operations {
     JNZ,
 }
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Function {
+    pub name: Value,
+    pub arguments: Vec<Value>,
+    pub program: PROGRAM,
+}
+
 impl VM {
-    pub fn new(prog: PROGRAM) -> Self {
+    pub fn new(bytecode: ByteCode) -> Self {
         VM {
             stack: Vec::new(),
-            program: prog,
+            program: bytecode.program,
             variables: HashMap::new(),
+            functions: bytecode.functions,
         }
     }
 
