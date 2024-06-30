@@ -29,6 +29,8 @@ pub enum Kind {
     EQ,
     // Functions and Constructions
     PRINT,
+    INPUT,
+
     IF,
     IF_ELSE,
     WHILE,
@@ -256,9 +258,21 @@ impl Parser {
     fn paren_expression(&mut self) -> Node {
         self.lexer.next_token();
 
-        let node = self.expression();
+        let mut node = Node::new(Kind::EMPTY, None, None, None, None);
 
-        self.lexer.next_token();
+        match self.lexer.token {
+            Some(Token::RPAR) => {
+                node = Node::new(Kind::EMPTY, None, None, None, None);
+                self.lexer.next_token()
+            }
+            Some(Token::EOF) => {
+                self.error("Expected ')' to end paren block!");
+            }
+            _ => {
+                node = self.expression();
+                self.lexer.next_token();
+            }
+        };
 
         return node;
     }
@@ -290,26 +304,27 @@ impl Parser {
     fn expression(&mut self) -> Node {
         let token = self.lexer.token.clone().unwrap();
 
-        if token == Token::LBRACK {
-            return self.statement();
-        }
+        match token {
+            Token::LBRACK | Token::INPUT => {
+                return self.statement();
+            }
+            Token::ID => {
+                let mut node = self.test();
+                if node.kind == Kind::VAR && self.lexer.token.clone().unwrap() == Token::EQUAL {
+                    self.lexer.next_token();
+                    node = Node::new(
+                        Kind::SET,
+                        None,
+                        Some(Box::new(node.clone())),
+                        Some(Box::new(self.expression())),
+                        None,
+                    );
+                }
 
-        if token != Token::ID {
-            return self.test();
+                return node;
+            }
+            _ => return self.test(),
         }
-        let mut node = self.test();
-        if node.kind == Kind::VAR && self.lexer.token.clone().unwrap() == Token::EQUAL {
-            self.lexer.next_token();
-            node = Node::new(
-                Kind::SET,
-                None,
-                Some(Box::new(node.clone())),
-                Some(Box::new(self.expression())),
-                None,
-            );
-        }
-
-        return node;
     }
 
     fn statement(&mut self) -> Node {
@@ -322,6 +337,7 @@ impl Parser {
                 node = Node::new(Kind::EMPTY, None, None, None, None);
                 self.lexer.next_token();
             }
+            //
             Token::PRINT => {
                 self.lexer.next_token();
                 node = Node::new(
@@ -334,6 +350,17 @@ impl Parser {
 
                 self.lexer.next_token();
             }
+            Token::INPUT => {
+                self.lexer.next_token();
+                node = Node::new(
+                    Kind::INPUT,
+                    None,
+                    Some(Box::new(self.paren_expression())),
+                    None,
+                    None,
+                );
+            }
+            //
             Token::IF => {
                 self.lexer.next_token();
                 node = Node::new(
@@ -366,6 +393,7 @@ impl Parser {
 
                 self.lexer.next_token();
             }
+            //
             Token::DEFINE => {
                 self.lexer.next_token();
 
@@ -403,6 +431,7 @@ impl Parser {
 
                 self.lexer.next_token();
             }
+            //
             Token::LBRA => {
                 node = Node::new(Kind::EMPTY, None, None, None, None);
                 self.lexer.next_token();
@@ -449,6 +478,7 @@ impl Parser {
 
                 self.lexer.next_token();
             }
+            //
             _ => {
                 node = Node::new(
                     Kind::EXPR,

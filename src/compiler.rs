@@ -105,6 +105,10 @@ impl Compiler {
                     self.compile(*node_3);
                 }
             }
+            Kind::INPUT => {
+                self.gen(Operations::INPUT);
+            }
+
             Kind::IF => {
                 self.compile(*node.op1.clone().unwrap());
 

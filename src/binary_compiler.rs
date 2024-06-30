@@ -23,26 +23,34 @@ pub struct VM {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Operations {
     PUSH,
+    //
     ARR,
     SLICE,
+    //
     ADD,
     SUB,
     DIV,
     MULT,
-    HALT,
-    POP,
-    DROP,
+    //
     VAR,
     ARG(Value),
     FETCH,
     STORE,
+    //
     PRINT,
+    INPUT,
+    //
     LT,
     BT,
     EQ,
+    //
     JMP,
     JZ,
     JNZ,
+    //
+    DROP,
+    POP,
+    HALT,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -62,8 +70,6 @@ impl VM {
     }
 
     fn error(&self, message: &str) {
-        println!("{:?}", self.variables);
-        println!("{:?}", self.stack);
         eprintln!("[RuntimeError]: {}", message);
         std::process::exit(1);
     }
@@ -85,23 +91,193 @@ impl VM {
 
             match self.program[pc] {
                 Operations::ADD => {
-                    self.add();
+                    let _b = self.stack.pop().expect("Stack error");
+                    let _a = self.stack.pop().expect("Stack error");
+
+                    match (_a, _b) {
+                        // Both same types
+                        (Value::INT(a), Value::INT(b)) => self.stack.push(Value::INT(a + b)),
+                        (Value::STR(a), Value::STR(b)) => {
+                            self.stack.push(Value::STR(format!("{}{}", a, b)));
+                        }
+                        (Value::ARRAY(a), Value::ARRAY(b)) => {
+                            let mut _temp_a = a.clone();
+                            let mut _temp_b = b.clone();
+
+                            let temp_array = _temp_a.append(&mut _temp_b);
+                        }
+                        (Value::BOOL(a), Value::BOOL(b)) => {
+                            let boolean_value = match (a, b) {
+                                (true, true) => true,
+                                (false, false) => false,
+                                (true, false) => true,
+                                (false, true) => false,
+                            };
+
+                            self.stack.push(Value::BOOL(boolean_value));
+                        }
+
+                        // INT and STR
+                        (Value::INT(a), Value::STR(b)) => {
+                            self.stack.push(Value::STR(format!("{}{}", a, b)));
+                        }
+                        (Value::STR(a), Value::INT(b)) => {
+                            self.stack.push(Value::STR(format!("{}{}", a, b)));
+                        }
+
+                        // BOOL and STR
+                        (Value::BOOL(a), Value::STR(b)) => {
+                            self.stack.push(Value::STR(format!("{}{}", a, b)));
+                        }
+                        (Value::STR(a), Value::BOOL(b)) => {
+                            self.stack.push(Value::STR(format!("{}{}", a, b)));
+                        }
+
+                        // ARRAY and STR
+                        (Value::ARRAY(a), Value::STR(b)) => {
+                            let mut values_array: Vec<String> = Vec::new();
+
+                            for item in a {
+                                let printable_value = match item {
+                                    Value::INT(i) => &i.to_string(),
+                                    Value::STR(s) => &format!("\"{}\"", s),
+                                    Value::BOOL(b) => &b.to_string(),
+                                    Value::ARRAY(_) => &("ARRAY[]".to_string()),
+                                };
+
+                                values_array.push(printable_value.clone());
+                            }
+
+                            let _f = format!("[{}]{}", values_array.join(","), b);
+                        }
+                        (Value::STR(a), Value::ARRAY(b)) => {
+                            let mut values_array: Vec<String> = Vec::new();
+
+                            for item in b {
+                                let printable_value = match item {
+                                    Value::INT(i) => &i.to_string(),
+                                    Value::STR(s) => &format!("\"{}\"", s),
+                                    Value::BOOL(b) => &b.to_string(),
+                                    Value::ARRAY(_) => &("ARRAY[]".to_string()),
+                                };
+
+                                values_array.push(printable_value.clone());
+                            }
+
+                            let _f = format!("[{}]{}", values_array.join(","), a);
+                        }
+
+                        // Other values we cannot implement
+                        _ => self.error("Cannot add not implemented values!"),
+                    }
+
                     pc += 1
                 }
                 Operations::SUB => {
-                    self.sub();
+                    let _b = self.stack.pop().expect("Stack error");
+                    let _a = self.stack.pop().expect("Stack error");
+
+                    match (_a, _b) {
+                        (Value::INT(a), Value::INT(b)) => {
+                            self.stack.push(Value::INT(a - b));
+                        }
+                        _ => self.error("Cannot substract types which doesn't implemented!"),
+                    };
+
                     pc += 1
                 }
                 Operations::MULT => {
-                    self.mult();
+                    let _b = self.stack.pop().expect("Stack error");
+                    let _a = self.stack.pop().expect("Stack error");
+
+                    match (_a, _b) {
+                        // Same type
+                        (Value::INT(a), Value::INT(b)) => {
+                            self.stack.push(Value::INT(a * b));
+                        }
+
+                        // INT and STR
+                        (Value::INT(a), Value::STR(b)) => {
+                            self.stack.push(Value::STR(b.repeat(a as usize)));
+                        }
+                        (Value::STR(a), Value::INT(b)) => {
+                            self.stack.push(Value::STR(a.repeat(b as usize)));
+                        }
+
+                        // INT and ARRAY
+                        (Value::INT(a), Value::ARRAY(b)) => {
+                            let mut _temp_b = b.clone();
+                            let mut _arr = Vec::new();
+
+                            for _ in 0..a {
+                                _arr.append(&mut _temp_b);
+                            }
+
+                            self.stack.push(Value::ARRAY(_arr));
+                        }
+                        (Value::ARRAY(a), Value::INT(b)) => {
+                            let mut _temp_a = a.clone();
+                            let mut _arr = Vec::new();
+
+                            for _ in 0..b {
+                                _arr.append(&mut _temp_a);
+                            }
+
+                            self.stack.push(Value::ARRAY(_arr));
+                        }
+
+                        // Others
+                        _ => self.error("Cannot multiply types which doesn't implemented!"),
+                    }
+
                     pc += 1
                 }
                 Operations::DIV => {
-                    self.div();
+                    let _b = self.stack.pop().expect("Stack error");
+                    let _a = self.stack.pop().expect("Stack error");
+
+                    match (_a, _b) {
+                        // Same type
+                        (Value::INT(a), Value::INT(b)) => {
+                            self.stack.push(Value::INT(a / b));
+                        }
+
+                        // INT and STR
+                        (Value::STR(a), Value::INT(b)) => {
+                            if a.len() < 1 {
+                                self.error("Cannot divide string which length is less 2");
+                            }
+
+                            let final_string_length = a.len() / 2;
+                            let _chars = a
+                                .clone()
+                                .chars()
+                                .into_iter()
+                                .map(|x| x.to_string())
+                                .collect::<Vec<String>>();
+
+                            // Doing a crutch because rust cannot let me just use slices (cuz size is unknown at
+                            // compilation time 🤬)
+
+                            let mut _str = String::new();
+
+                            for index in 0..final_string_length {
+                                _str.push_str(_chars[index].as_str());
+                            }
+
+                            // FINALLY PUSHING IT TO STACK
+
+                            self.stack.push(Value::STR(_str));
+                        }
+
+                        // Others
+                        _ => self.error("Cannot divide types which doesn't implemented!"),
+                    }
+
                     pc += 1
                 }
                 Operations::POP => {
-                    self.pop();
+                    self.stack.pop();
                     pc += 1
                 }
                 Operations::DROP => {
@@ -123,7 +299,15 @@ impl VM {
                     pc += 2;
                 }
                 Operations::PUSH => {
-                    self.push(arg);
+                    match arg {
+                        Operations::ARG(a) => {
+                            self.stack.push(a);
+                        }
+                        _ => {
+                            eprintln!("Error occured while managin' data in stack");
+                        }
+                    }
+
                     pc += 2
                 }
                 Operations::VAR => {
@@ -167,7 +351,15 @@ impl VM {
                             if varname.len() < 1 {
                                 self.error("Unexpected variable name!");
                             } else {
-                                self.fetch(varname);
+                                if !(self.variables.contains_key(varname.as_str())) {
+                                    self.error(
+                                        format!("Variable '{}' is not defined!", varname).as_str(),
+                                    );
+                                }
+
+                                let variable_value =
+                                    self.variables.clone().get(&varname).unwrap().clone();
+                                let _ = self.stack.push(variable_value);
                             }
                         }
                         _ => {
@@ -186,7 +378,8 @@ impl VM {
                             if varname.len() < 1 {
                                 self.error("Unexpected variable name!");
                             } else {
-                                self.store(varname);
+                                let stack_value = self.stack.pop().unwrap_or(Value::INT(0));
+                                self.variables.insert(varname, stack_value);
                             }
                         }
                         _ => {
@@ -235,6 +428,14 @@ impl VM {
                             print!("]");
                         }
                     }
+
+                    pc += 1;
+                }
+                Operations::INPUT => {
+                    let mut input_string = String::new();
+                    let _ = std::io::stdin().read_line(&mut input_string);
+
+                    self.stack.push(Value::STR(input_string.trim().to_string()));
 
                     pc += 1;
                 }
@@ -438,77 +639,6 @@ impl VM {
         return Ok(());
     }
 
-    // Commands
-
-    pub fn add(&mut self) {
-        let _b = self.stack.pop().expect("Stack error");
-        let _a = self.stack.pop().expect("Stack error");
-
-        if let (Value::INT(a), Value::INT(b)) = (_a, _b) {
-            self.stack.push(Value::INT(a + b));
-        } else {
-            eprintln!("Cannot calculate values which both is not NUM");
-        }
-    }
-
-    pub fn sub(&mut self) {
-        let _b = self.stack.pop().expect("Stack error");
-        let _a = self.stack.pop().expect("Stack error");
-
-        if let (Value::INT(a), Value::INT(b)) = (_a, _b) {
-            self.stack.push(Value::INT(a / b));
-        } else {
-            eprintln!("Cannot calculate values which both is not NUM");
-        }
-    }
-
-    pub fn mult(&mut self) {
-        let _b = self.stack.pop().expect("Stack error");
-        let _a = self.stack.pop().expect("Stack error");
-
-        if let (Value::INT(a), Value::INT(b)) = (_a, _b) {
-            self.stack.push(Value::INT(a * b));
-        } else {
-            eprintln!("Cannot calculate values which both is not NUM");
-        }
-    }
-
-    pub fn div(&mut self) {
-        let _b = self.stack.pop().expect("Stack error");
-        let _a = self.stack.pop().expect("Stack error");
-
-        if let (Value::INT(a), Value::INT(b)) = (_a, _b) {
-            self.stack.push(Value::INT(a / b));
-        } else {
-            eprintln!("Cannot calculate values which both is not NUM");
-        }
-    }
-
-    pub fn push(&mut self, arg: Operations) {
-        match arg {
-            Operations::ARG(a) => {
-                self.stack.push(a);
-            }
-            _ => {
-                eprintln!("Error while pushing argument to stack")
-            }
-        }
-    }
-
-    pub fn pop(&mut self) {
-        self.stack.pop();
-    }
-
-    pub fn fetch(&mut self, varname: String) {
-        if !(self.variables.contains_key(varname.as_str())) {
-            eprintln!("Variable '{}' is not defined!", varname);
-            return;
-        }
-
-        let variable_value = self.variables.clone().get(&varname).unwrap().clone();
-        let _ = self.stack.push(variable_value);
-    }
-
     pub fn store(&mut self, varname: String) {
         let stack_value = self.stack.pop().unwrap_or(Value::INT(0));
         self.variables.insert(varname, stack_value);
@@ -554,6 +684,7 @@ impl fmt::Display for Operations {
             Operations::ARR => "Operations::ARR".to_string(),
             Operations::SLICE => "Operations::SLICE".to_string(),
             Operations::DROP => "Operations::DROP".to_string(),
+            Operations::INPUT => "Operations::INPUT".to_string(),
         };
         write!(f, "{}", s)
     }

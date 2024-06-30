@@ -42,6 +42,7 @@ pub enum Token {
     BIGGER,
     // Functions and Constructions
     PRINT,
+    INPUT,
 
     IF,
     ELSE,
@@ -102,11 +103,15 @@ impl Lexer {
 
         let words = HashMap::from([
             ("print".to_string(), Token::PRINT),
+            ("input".to_string(), Token::INPUT),
+            //
             ("false".to_string(), Token::FALSE),
             ("true".to_string(), Token::TRUE),
+            //
             ("if".to_string(), Token::IF),
             ("else".to_string(), Token::ELSE),
             ("while".to_string(), Token::WHILE),
+            //
             ("define".to_string(), Token::DEFINE),
             ("return".to_string(), Token::RETURN),
         ]);
@@ -153,6 +158,38 @@ impl Lexer {
                     }
 
                     self.getc();
+                }
+                '-' => {
+                    self.getc();
+                    if self.char.is_digit(10) {
+                        let mut value = 0;
+                        while self.char.is_digit(10) {
+                            value = value * 10 + self.char.to_digit(10).unwrap() as i32;
+                            self.getc();
+                        }
+
+                        value = value * -1;
+
+                        match self.is_string {
+                            true => {
+                                self.token = Some(Token::STR);
+
+                                self.value = match self.space_before {
+                                    true => {
+                                        self.space_before = false;
+                                        Some(Value::STR(format!(" {}", value)))
+                                    }
+                                    false => Some(Value::STR(value.to_string())),
+                                }
+                            }
+                            false => {
+                                self.token = Some(Token::NUM);
+                                self.value = Some(Value::INT(value))
+                            }
+                        }
+                    } else {
+                        self.token = Some(Token::MINUS);
+                    }
                 }
                 _ if self.symbols.contains_key(&self.char) => {
                     let matched_token = self.symbols.get(&self.char).unwrap().clone();

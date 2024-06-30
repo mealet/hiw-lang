@@ -75,6 +75,6 @@ fn main() {
     }
 }
 
-// TODO: Add some built-in functions (sin, cos, tg, ctg, abs, int, string, bool, input, type)
-// TODO: Add custom function returning values (just push value in stack);
+// TODO: Add some built-in functions (sin, cos, tg, ctg, abs, int, string, bool, _input, type)
+// TODO: Add printing message in input
 // FIX: While cycle is still going infinite loop
