@@ -46,7 +46,10 @@ pub enum Token {
     IF,
     ELSE,
     WHILE,
+
+    // Macros
     DEFINE,
+    RETURN,
     // End Of File
     EOF,
 }
@@ -105,6 +108,7 @@ impl Lexer {
             ("else".to_string(), Token::ELSE),
             ("while".to_string(), Token::WHILE),
             ("define".to_string(), Token::DEFINE),
+            ("return".to_string(), Token::RETURN),
         ]);
 
         let mut lexer = Lexer {

@@ -39,6 +39,7 @@ pub enum Kind {
     BRACK_ENUM,
     ARGS_ENUM,
     SLICE,
+    RETURN,
     // Etc.
     SEQ,
     PROG,
@@ -85,28 +86,36 @@ impl Parser {
 
         match token {
             Token::ID => {
-                let mut node = Node::new(
-                    Kind::VAR,
-                    Some(self.lexer.value.clone().unwrap()),
-                    None,
-                    None,
-                    None,
-                );
+                let id_name = self.lexer.value.clone().unwrap();
+
+                let mut node = Node::new(Kind::VAR, Some(id_name.clone()), None, None, None);
                 self.lexer.next_token();
 
-                if self.lexer.token == Some(Token::LBRACK) {
-                    self.lexer.next_token();
+                match self.lexer.token {
+                    Some(Token::LBRACK) => {
+                        self.lexer.next_token();
 
-                    node = Node::new(
-                        Kind::SLICE,
-                        None,
-                        Some(Box::new(node.clone())),
-                        Some(Box::new(self.expression())),
-                        None,
-                    );
+                        node = Node::new(
+                            Kind::SLICE,
+                            None,
+                            Some(Box::new(node.clone())),
+                            Some(Box::new(self.expression())),
+                            None,
+                        );
 
-                    self.lexer.next_token();
-                }
+                        self.lexer.next_token()
+                    }
+                    Some(Token::LPAR) => {
+                        node = Node::new(
+                            Kind::FUNCTION_CALL,
+                            Some(id_name),
+                            Some(Box::new(self.paren_arguments())),
+                            None,
+                            None,
+                        );
+                    }
+                    _ => {}
+                };
 
                 return node;
             }
@@ -380,6 +389,19 @@ impl Parser {
                         self.error("Expected '{' after function define");
                     }
                 };
+            }
+            Token::RETURN => {
+                self.lexer.next_token();
+
+                node = Node::new(
+                    Kind::RETURN,
+                    None,
+                    Some(Box::new(self.expression())),
+                    None,
+                    None,
+                );
+
+                self.lexer.next_token();
             }
             Token::LBRA => {
                 node = Node::new(Kind::EMPTY, None, None, None, None);

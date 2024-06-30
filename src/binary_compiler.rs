@@ -3,18 +3,21 @@ use std::collections::HashMap;
 
 type PROGRAM = Vec<Operations>;
 
-#[derive(Debug, PartialEq, Eq)]
-pub struct VM {
-    pub stack: Vec<Value>,
-    pub program: PROGRAM,
-    pub variables: HashMap<String, Value>,
-}
+
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum Value {
     INT(i32),
     STR(String),
     BOOL(bool),
+    ARRAY(Vec<Value>),
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub struct VM {
+    pub stack: Vec<Value>,
+    pub program: PROGRAM,
+    pub variables: HashMap<String, Value>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -28,6 +31,7 @@ pub enum Operations {
     MULT,
     HALT,
     POP,
+    DROP,
     VAR,
     ARG(Value),
     FETCH,
@@ -41,16 +45,25 @@ pub enum Operations {
     JNZ,
 }
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Function {
+    pub name: Value,
+    pub arguments: Vec<Value>,
+    pub program: PROGRAM,
+}
+
 impl VM {
-    pub fn new(prog: PROGRAM) -> Self {
+    pub fn new(program: PROGRAM) -> Self {
         VM {
             stack: Vec::new(),
-            program: prog,
+            program: program,
             variables: HashMap::new(),
         }
     }
 
     fn error(&self, message: &str) {
+        println!("{:?}", self.variables);
+        println!("{:?}", self.stack);
         eprintln!("[RuntimeError]: {}", message);
         std::process::exit(1);
     }
@@ -90,6 +103,24 @@ impl VM {
                 Operations::POP => {
                     self.pop();
                     pc += 1
+                }
+                Operations::DROP => {
+                    match arg {
+                        Operations::ARG(Value::STR(val)) => {
+                            if self.variables.contains_key(&val) {
+                                self.variables.remove(&val);
+                            } else {
+                                self.error(
+                                    format!("Value '{}' being dropped does not exists!", &val)
+                                        .as_str(),
+                                );
+                            }
+                        }
+                        _ => {
+                            self.error("Dropping value isn't ID!");
+                        }
+                    };
+                    pc += 2;
                 }
                 Operations::PUSH => {
                     self.push(arg);
@@ -474,7 +505,7 @@ impl VM {
             return;
         }
 
-        let variable_value = self.variables[varname.as_str()].clone();
+        let variable_value = self.variables.clone().get(&varname).unwrap().clone();
         let _ = self.stack.push(variable_value);
     }
 
@@ -522,6 +553,7 @@ impl fmt::Display for Operations {
             Operations::EQ => "Operations::EQ".to_string(),
             Operations::ARR => "Operations::ARR".to_string(),
             Operations::SLICE => "Operations::SLICE".to_string(),
+            Operations::DROP => "Operations::DROP".to_string(),
         };
         write!(f, "{}", s)
     }
@@ -565,6 +597,8 @@ fn main() {{
             .arg(&filenames[0])
             .output()
             .expect("Cannot compile VM");
+
+        println!("{:?}", String::from_utf8_lossy(&compiler.stderr));
 
         for fname in filenames {
             let _ = std::fs::remove_file(fname);

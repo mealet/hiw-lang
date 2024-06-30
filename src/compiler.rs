@@ -7,11 +7,14 @@ use crate::{
 };
 use std::collections::HashMap;
 
+#[derive(Debug, Clone)]
 pub struct Compiler {
     program: Vec<Operations>,
     functions: HashMap<String, crate::vm::Function>,
     pc: i32,
 }
+
+// WARNING: Compare struct with binary compiler
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ByteCode {
@@ -26,6 +29,11 @@ impl Compiler {
             functions: HashMap::new(),
             pc: 0,
         }
+    }
+
+    pub fn error(&self, message: &str) {
+        eprintln!("{}", message);
+        std::process::exit(1);
     }
 
     fn gen(&mut self, command: Operations) {
@@ -215,6 +223,53 @@ impl Compiler {
 
                 self.functions.insert(stringify_function_name, function);
             }
+            Kind::FUNCTION_CALL => {
+                if let Some(Value::STR(val)) = node.value {
+                    let function_name = val;
+
+                    if self.functions.contains_key(&function_name) {
+                        // Initializating function object
+
+                        let compiler_clone = self.clone();
+                        let function_object = compiler_clone
+                            .functions
+                            .get(&function_name)
+                            .clone()
+                            .unwrap();
+
+                        // Implementing arguments
+
+                        let mut args_compiler = Compiler::new();
+                        let mut args_bytes = args_compiler
+                            .compile(*node.op1.clone().unwrap())
+                            .program
+                            .into_iter()
+                            .collect::<Vec<Operations>>();
+
+                        self.program.append(&mut args_bytes);
+
+                        // Generating variables for arguments
+
+                        for (index, arg) in function_object.arguments.iter().rev().enumerate() {
+                            self.gen(Operations::STORE);
+                            self.program.push(Operations::ARG(arg.clone()));
+                        }
+
+                        let mut function_program = function_object.program.clone();
+
+                        self.program.append(&mut function_program);
+
+                        function_object.arguments.iter().for_each(|arg| {
+                            self.gen(Operations::DROP);
+                            self.gen(Operations::ARG(arg.clone()))
+                        });
+                    } else {
+                        self.error(
+                            format!("Function '{}' is not defined!", &function_name).as_str(),
+                        );
+                    }
+                }
+            }
 
             Kind::BRACK_ENUM => {
                 self.compile(*node.op1.clone().unwrap());
@@ -229,6 +284,9 @@ impl Compiler {
                 self.compile(*node.op2.clone().unwrap());
 
                 self.gen(Operations::SLICE);
+            }
+            Kind::RETURN => {
+                self.compile(*node.op1.clone().unwrap());
             }
 
             // Conditions

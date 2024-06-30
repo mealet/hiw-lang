@@ -57,7 +57,7 @@ fn main() {
 
     // Creating VM
 
-    let mut vm = vm::VM::new(byte_code);
+    let mut vm = vm::VM::new(byte_code.program);
 
     // Checking compile mode
 
@@ -77,6 +77,4 @@ fn main() {
 
 // TODO: Add some built-in functions (sin, cos, tg, ctg, abs, int, string, bool, input, type)
 // TODO: Add custom function returning values (just push value in stack);
-//
-// Must be finished!
-// TODO: Add custom function calling
+// FIX: While cycle is still going infinite loop
