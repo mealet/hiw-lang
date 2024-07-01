@@ -41,7 +41,9 @@ pub enum Kind {
     BRACK_ENUM,
     ARGS_ENUM,
     SLICE,
+
     RETURN,
+    OP_MACRO,
     // Etc.
     SEQ,
     PROG,
@@ -116,6 +118,46 @@ impl Parser {
                             None,
                         );
                     }
+                    Some(Token::DOT) => {
+                        // Going to next token which have function name
+                        self.lexer.next_token();
+
+                        node = Node::new(
+                            Kind::FUNCTION_CALL,
+                            Some(self.lexer.value.clone().unwrap_or_else(|| {
+                                self.error("Unexpected dot after ID");
+                                Value::INT(0)
+                            })),
+                            Some(Box::new(node.clone())),
+                            None,
+                            None,
+                        );
+
+                        // Searching for '(' for function call
+
+                        self.lexer.next_token();
+
+                        if self.lexer.token != Some(Token::LPAR) {
+                            self.error("Expected '(' for function call");
+                        }
+
+                        // Going to args or ')'
+
+                        self.lexer.next_token();
+
+                        // For now ignoring all arguments
+
+                        while self.lexer.token != Some(Token::RPAR) {
+                            if self.lexer.token == Some(Token::SEMICOLON)
+                                || self.lexer.token == Some(Token::EOF)
+                            {
+                                self.error("Expected ')' after function call");
+                            }
+                            self.lexer.next_token();
+                        }
+
+                        self.lexer.next_token();
+                    }
                     _ => {}
                 };
 
@@ -131,18 +173,61 @@ impl Parser {
                 );
                 self.lexer.next_token();
 
-                if self.lexer.token == Some(Token::LBRACK) {
-                    self.lexer.next_token();
+                match self.lexer.token {
+                    Some(Token::LBRACK) => {
+                        self.lexer.next_token();
 
-                    node = Node::new(
-                        Kind::SLICE,
-                        None,
-                        Some(Box::new(node.clone())),
-                        Some(Box::new(self.expression())),
-                        None,
-                    );
+                        node = Node::new(
+                            Kind::SLICE,
+                            None,
+                            Some(Box::new(node.clone())),
+                            Some(Box::new(self.expression())),
+                            None,
+                        );
 
-                    self.lexer.next_token();
+                        self.lexer.next_token();
+                    }
+                    Some(Token::DOT) => {
+                        // Going to next token which have function name
+                        self.lexer.next_token();
+
+                        node = Node::new(
+                            Kind::FUNCTION_CALL,
+                            Some(self.lexer.value.clone().unwrap_or_else(|| {
+                                self.error("Unexpected dot after ID");
+                                Value::INT(0)
+                            })),
+                            Some(Box::new(node.clone())),
+                            None,
+                            None,
+                        );
+
+                        // Searching for '(' for function call
+
+                        self.lexer.next_token();
+
+                        if self.lexer.token != Some(Token::LPAR) {
+                            self.error("Expected '(' for function call");
+                        }
+
+                        // Going to args or ')'
+
+                        self.lexer.next_token();
+
+                        // For now ignoring all arguments
+
+                        while self.lexer.token != Some(Token::RPAR) {
+                            if self.lexer.token == Some(Token::SEMICOLON)
+                                || self.lexer.token == Some(Token::EOF)
+                            {
+                                self.error("Expected ')' after function call");
+                            }
+                            self.lexer.next_token();
+                        }
+
+                        self.lexer.next_token();
+                    }
+                    _ => {}
                 }
 
                 return node;
@@ -158,16 +243,155 @@ impl Parser {
 
                 let mut node = Node::new(Kind::STRING, Some(Value::STR(ident)), None, None, None);
 
+                let mut lexer_clone = self.lexer.clone();
+                lexer_clone.next_token();
+
+                match lexer_clone.token {
+                    Some(Token::DOT) => {
+                        self.lexer.next_token();
+
+                        // Going to next token which have function name
+                        self.lexer.next_token();
+
+                        node = Node::new(
+                            Kind::FUNCTION_CALL,
+                            Some(self.lexer.value.clone().unwrap_or_else(|| {
+                                self.error("Unexpected dot after ID");
+                                Value::INT(0)
+                            })),
+                            Some(Box::new(node.clone())),
+                            None,
+                            None,
+                        );
+
+                        // Searching for '(' for function call
+
+                        self.lexer.next_token();
+
+                        if self.lexer.token != Some(Token::LPAR) {
+                            self.error("Expected '(' for function call");
+                        }
+
+                        // Going to args or ')'
+
+                        self.lexer.next_token();
+
+                        // For now ignoring all arguments
+
+                        while self.lexer.token != Some(Token::RPAR) {
+                            if self.lexer.token == Some(Token::SEMICOLON)
+                                || self.lexer.token == Some(Token::EOF)
+                            {
+                                self.error("Expected ')' after function call");
+                            }
+                            self.lexer.next_token();
+                        }
+                    }
+                    _ => {}
+                };
+
                 return node;
             }
             Token::TRUE => {
-                let node = Node::new(Kind::BOOL, Some(Value::BOOL(true)), None, None, None);
+                let mut node = Node::new(Kind::BOOL, Some(Value::BOOL(true)), None, None, None);
+
                 self.lexer.next_token();
+
+                match self.lexer.token {
+                    Some(Token::DOT) => {
+                        // Going to next token which have function name
+                        self.lexer.next_token();
+
+                        node = Node::new(
+                            Kind::FUNCTION_CALL,
+                            Some(self.lexer.value.clone().unwrap_or_else(|| {
+                                self.error("Unexpected dot after ID");
+                                Value::INT(0)
+                            })),
+                            Some(Box::new(node.clone())),
+                            None,
+                            None,
+                        );
+
+                        // Searching for '(' for function call
+
+                        self.lexer.next_token();
+
+                        if self.lexer.token != Some(Token::LPAR) {
+                            self.error("Expected '(' for function call");
+                        }
+
+                        // Going to args or ')'
+
+                        self.lexer.next_token();
+
+                        // For now ignoring all arguments
+
+                        while self.lexer.token != Some(Token::RPAR) {
+                            if self.lexer.token == Some(Token::SEMICOLON)
+                                || self.lexer.token == Some(Token::EOF)
+                            {
+                                self.error("Expected ')' after function call");
+                            }
+                            self.lexer.next_token();
+                        }
+
+                        self.lexer.next_token();
+                    }
+                    _ => {}
+                }
+
                 return node;
             }
             Token::FALSE => {
-                let node = Node::new(Kind::BOOL, Some(Value::BOOL(false)), None, None, None);
+                let mut node = Node::new(Kind::BOOL, Some(Value::BOOL(false)), None, None, None);
+
                 self.lexer.next_token();
+
+                match self.lexer.token {
+                    Some(Token::DOT) => {
+                        // Going to next token which have function name
+                        self.lexer.next_token();
+
+                        node = Node::new(
+                            Kind::FUNCTION_CALL,
+                            Some(self.lexer.value.clone().unwrap_or_else(|| {
+                                self.error("Unexpected dot after ID");
+                                Value::INT(0)
+                            })),
+                            Some(Box::new(node.clone())),
+                            None,
+                            None,
+                        );
+
+                        // Searching for '(' for function call
+
+                        self.lexer.next_token();
+
+                        if self.lexer.token != Some(Token::LPAR) {
+                            self.error("Expected '(' for function call");
+                        }
+
+                        // Going to args or ')'
+
+                        self.lexer.next_token();
+
+                        // For now ignoring all arguments
+
+                        while self.lexer.token != Some(Token::RPAR) {
+                            if self.lexer.token == Some(Token::SEMICOLON)
+                                || self.lexer.token == Some(Token::EOF)
+                            {
+                                self.error("Expected ')' after function call");
+                            }
+                            self.lexer.next_token();
+                        }
+
+                        self.lexer.next_token();
+                    }
+                    _ => {}
+                };
+
                 return node;
             }
             Token::COMMA => {
@@ -430,6 +654,17 @@ impl Parser {
                 );
 
                 self.lexer.next_token();
+            }
+            Token::OP => {
+                self.lexer.next_token();
+
+                node = Node::new(
+                    Kind::OP_MACRO,
+                    None,
+                    Some(Box::new(self.paren_arguments())),
+                    None,
+                    None,
+                );
             }
             //
             Token::LBRA => {

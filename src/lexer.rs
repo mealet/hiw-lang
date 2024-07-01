@@ -51,6 +51,7 @@ pub enum Token {
     // Macros
     DEFINE,
     RETURN,
+    OP,
     // End Of File
     EOF,
 }
@@ -114,6 +115,7 @@ impl Lexer {
             //
             ("define".to_string(), Token::DEFINE),
             ("return".to_string(), Token::RETURN),
+            ("op!".to_string(), Token::OP),
         ]);
 
         let mut lexer = Lexer {
@@ -243,8 +245,10 @@ impl Lexer {
                     }
                 }
                 _ if self.char.is_alphabetic() => {
+                    let allowed_chars_in_id = ['!'];
+
                     let mut id = String::new();
-                    while self.char.is_alphanumeric() {
+                    while self.char.is_alphanumeric() || allowed_chars_in_id.contains(&self.char) {
                         id.push(self.char);
                         self.getc();
                     }

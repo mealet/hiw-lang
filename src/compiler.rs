@@ -289,8 +289,34 @@ impl Compiler {
 
                 self.gen(Operations::SLICE);
             }
+
             Kind::RETURN => {
                 self.compile(*node.op1.clone().unwrap());
+            }
+            Kind::OP_MACRO => {
+                let mut args_compiler = Compiler::new();
+                let arguments = args_compiler
+                    .compile(*node.op1.clone().unwrap())
+                    .program
+                    .into_iter()
+                    .filter(|x| x != &Operations::FETCH && x != &Operations::PUSH)
+                    .collect::<Vec<Operations>>();
+
+                for arg in arguments {
+                    if let Operations::ARG(Value::STR(string_argument)) = arg {
+                        if crate::vm::OPERATIONS_MAP.contains_key(&string_argument.as_str()) {
+                            let matched_operation = crate::vm::OPERATIONS_MAP
+                                .get(&string_argument.as_str())
+                                .unwrap();
+
+                            self.gen(matched_operation.clone());
+                        } else {
+                            self.gen(Operations::ARG(Value::STR(string_argument)));
+                        }
+                    } else {
+                        self.gen(arg);
+                    }
+                }
             }
 
             // Conditions
