@@ -52,32 +52,29 @@ fn main() {
     let mut parser = parser::Parser::new(lexer);
     let abstract_syntax_tree = parser.parse();
 
-    println!("{:?}", abstract_syntax_tree);
+    // Compiling Tree to byte code
 
-    // // Compiling Tree to byte code
-    //
-    // let mut compiler = compiler::Compiler::new();
-    // let byte_code = compiler.compile(abstract_syntax_tree);
-    //
-    // // Creating VM
-    //
-    // let mut vm = vm::VM::new(byte_code.program);
-    //
-    // // Checking compile mode
-    //
-    // if compile_mode {
-    //     // Compiling VM with commands
-    //
-    //     let output_filename = args[2].clone();
-    //
-    //     let compile_container = binary_compiler::Container::new(output_filename, vm);
-    //     let _ = compile_container.compile();
-    // } else {
-    //     // Running VM
-    //
-    //     let _ = vm.run();
-    // }
+    let mut compiler = compiler::Compiler::new();
+    let byte_code = compiler.compile_all(abstract_syntax_tree);
+
+    // Creating VM
+
+    let mut vm = vm::VM::new(byte_code.program);
+
+    // Checking compile mode
+
+    if compile_mode {
+        // Compiling VM with commands
+
+        let output_filename = args[2].clone();
+
+        let compile_container = binary_compiler::Container::new(output_filename, vm);
+        let _ = compile_container.compile();
+    } else {
+        // Running VM
+
+        let _ = vm.run();
+    }
 }
 
 // TODO: Create built-in functions with op!() macro and VM Bytes
-// FIXME: While cycle is still going infinite loop

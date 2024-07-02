@@ -14,7 +14,7 @@ dependencies = [
 
 [[package]]
 name = "hiw"
-version = "1.2.5"
+version = "1.2.6"
 dependencies = [
  "colored",
  "lazy_static",

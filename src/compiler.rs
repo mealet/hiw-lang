@@ -11,7 +11,7 @@ use std::collections::HashMap;
 pub struct Compiler {
     program: Vec<Operations>,
     functions: HashMap<String, crate::vm::Function>,
-    pc: i32,
+    pub pc: i32,
 }
 
 // WARNING: Compare struct with binary compiler
@@ -39,6 +39,19 @@ impl Compiler {
     fn gen(&mut self, command: Operations) {
         self.program.push(command);
         self.pc = self.pc + 1;
+    }
+
+    pub fn compile_all(&mut self, nodes: Vec<Node>) -> ByteCode {
+        for n in nodes {
+            self.compile(n);
+        }
+
+        self.gen(Operations::HALT);
+
+        return ByteCode {
+            program: self.program.clone(),
+            functions: self.functions.clone(),
+        };
     }
 
     pub fn compile(&mut self, node: Node) -> ByteCode {
@@ -254,7 +267,7 @@ impl Compiler {
 
                         // Generating variables for arguments
 
-                        for (index, arg) in function_object.arguments.iter().rev().enumerate() {
+                        for (_, arg) in function_object.arguments.iter().rev().enumerate() {
                             self.gen(Operations::STORE);
                             self.program.push(Operations::ARG(arg.clone()));
                         }

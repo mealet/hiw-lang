@@ -488,9 +488,9 @@ impl VM {
                             });
                             if let Value::BOOL(unwrapped_value) = stack_value {
                                 if unwrapped_value == true {
-                                    pc = jump_code as usize
+                                    pc = jump_code as usize;
                                 } else {
-                                    pc += 2
+                                    pc += 2;
                                 }
                             } else {
                                 self.error("Comparsion result isn't boolean!");

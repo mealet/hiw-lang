@@ -724,7 +724,6 @@ impl Parser {
                 );
 
                 if self.lexer.token.clone().unwrap() != Token::SEMICOLON {
-                    println!("{:?}", self.lexer.token);
                     self.error("';' expected after expression");
                 }
                 self.lexer.next_token()
@@ -734,19 +733,14 @@ impl Parser {
         return node;
     }
 
-    pub fn parse(&mut self) -> Node {
+    pub fn parse(&mut self) -> Vec<Node> {
         self.lexer.next_token();
-        let mut program_node = Node::new(Kind::PROG, None, None, None, None);
-        let mut last_node = &mut program_node;
 
-        while self.lexer.token.clone().unwrap() != Token::EOF {
+        let mut statements = Vec::new();
+
+        while self.lexer.token.clone() != Some(Token::EOF) {
             let stmt = self.statement();
-            if last_node.kind == Kind::PROG && last_node.op1.is_none() {
-                last_node.op1 = Some(Box::new(stmt));
-            } else {
-                last_node.op2 = Some(Box::new(stmt));
-                last_node = last_node.op2.as_mut().unwrap();
-            }
+            statements.push(stmt);
         }
 
         if let Some(token) = self.lexer.token {
@@ -755,6 +749,6 @@ impl Parser {
             }
         }
 
-        return program_node;
+        return statements;
     }
 }

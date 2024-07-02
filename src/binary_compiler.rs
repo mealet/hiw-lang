@@ -53,6 +53,34 @@ pub enum Operations {
     HALT,
 }
 
+lazy_static! {
+    pub static ref OPERATIONS_MAP: HashMap<&'static str, Operations> = {
+        let mut m = HashMap::new();
+        m.insert("PUSH", Operations::PUSH);
+        m.insert("ARR", Operations::ARR);
+        m.insert("SLICE", Operations::SLICE);
+        m.insert("ADD", Operations::ADD);
+        m.insert("SUB", Operations::SUB);
+        m.insert("DIV", Operations::DIV);
+        m.insert("MULT", Operations::MULT);
+        m.insert("VAR", Operations::VAR);
+        m.insert("FETCH", Operations::FETCH);
+        m.insert("STORE", Operations::STORE);
+        m.insert("PRINT", Operations::PRINT);
+        m.insert("INPUT", Operations::INPUT);
+        m.insert("LT", Operations::LT);
+        m.insert("BT", Operations::BT);
+        m.insert("EQ", Operations::EQ);
+        m.insert("JMP", Operations::JMP);
+        m.insert("JZ", Operations::JZ);
+        m.insert("JNZ", Operations::JNZ);
+        m.insert("DROP", Operations::DROP);
+        m.insert("POP", Operations::POP);
+        m.insert("HALT", Operations::HALT);
+        m
+    };
+}
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Function {
     pub name: Value,
@@ -457,12 +485,16 @@ impl VM {
                         if jump_code as usize > self.program.len() {
                             self.error("Jump Code is bigger than byte code!");
                         } else {
-                            let stack_value = self.stack.pop().unwrap();
+                            let stack_value = self.stack.pop().unwrap_or_else(|| {
+                                println!("{:?}", self.stack);
+                                self.error("Stack error with boolean operation!");
+                                Value::BOOL(false)
+                            });
                             if let Value::BOOL(unwrapped_value) = stack_value {
                                 if unwrapped_value == true {
-                                    pc = jump_code as usize
+                                    pc = jump_code as usize;
                                 } else {
-                                    pc += 2
+                                    pc += 2;
                                 }
                             } else {
                                 self.error("Comparsion result isn't boolean!");
