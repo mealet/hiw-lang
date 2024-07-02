@@ -15,7 +15,7 @@
 [Quick Start]: https://github.com/mealet/hiw/tree/master?tab=readme-ov-file#quick-start
 [Documentation]: https://github.com/mealet/hiw
 [Editors Support]: https://github.com/mealet/hiw/tree/master?tab=readme-ov-file#editors-support
-[License]: https://github.com/mealet/hiw/LICENSE
+[License]: https://github.com/mealet/hiw/blob/master/LICENSE
 
 ## Quick Start
 Steps to start writing on hiw-lang:
