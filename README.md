@@ -5,16 +5,17 @@
     <img src="https://github.com/mealet/hiw/assets/110933288/0cf160ac-ec86-4e24-8b15-05d732c712a6" width="50%"/>
   </picture>
 
-  [Release] | [Quick Start] | [Installation] | [Documentation] | [Editors Support]
+  [Release] | [Quick Start] | [Installation] | [Documentation] | [Editors Support] | [License]
 
   This is a simple programming language with variables, functions and manually byte-code controlling
 </div>
 
 [Release]: https://github.com/mealet/hiw/releases/latest
-[Installation]: https://github.com/mealet/hiw/new/master?filename=README.md#installation
-[Quick Start]: https://github.com/mealet/hiw/new/master?filename=README.md#quick-start
+[Installation]: https://github.com/mealet/hiw/tree/master?tab=readme-ov-file#installation
+[Quick Start]: https://github.com/mealet/hiw/tree/master?tab=readme-ov-file#quick-start
 [Documentation]: https://github.com/mealet/hiw
-[Editors Support]: https://github.com/mealet/hiw/new/master?filename=README.md#editors-support
+[Editors Support]: https://github.com/mealet/hiw/tree/master?tab=readme-ov-file#editors-support
+[License]: https://github.com/mealet/hiw/LICENSE
 
 ## Quick Start
 Steps to start writing on hiw-lang:
