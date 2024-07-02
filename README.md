@@ -11,10 +11,10 @@
 </div>
 
 [Release]: https://github.com/mealet/hiw/releases/latest
-[Installation]: https://github.com/mealet/hiw/tree/master?tab=readme-ov-file#installation
-[Quick Start]: https://github.com/mealet/hiw/tree/master?tab=readme-ov-file#quick-start
+[Installation]: https://github.com/mealet/hiw-lang?tab=readme-ov-file#--installation
+[Quick Start]: https://github.com/mealet/hiw-lang?tab=readme-ov-file#--quick-start
 [Documentation]: https://github.com/mealet/hiw
-[Editors Support]: https://github.com/mealet/hiw/tree/master?tab=readme-ov-file#editors-support
+[Editors Support]: https://github.com/mealet/hiw-lang?tab=readme-ov-file#--editors-support
 [License]: https://github.com/mealet/hiw/blob/master/LICENSE
 
 ## 👾 | Quick Start
