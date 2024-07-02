@@ -7,6 +7,19 @@ fn error(message: String) {
     std::process::exit(1);
 }
 
+pub fn remove_comments(text: String) -> String {
+    text.lines()
+        .map(|line| {
+            if let Some(index) = line.find("//") {
+                &line[..index]
+            } else {
+                line
+            }
+        })
+        .collect::<Vec<&str>>()
+        .join("\n")
+}
+
 pub fn get_code(path_to_file: String) -> String {
     // reading code from source
     let source_code = match fs::read_to_string(&path_to_file) {
@@ -18,7 +31,10 @@ pub fn get_code(path_to_file: String) -> String {
     };
 
     // formatting code
-    let formatted_code = source_code.replace("\n", "").replace("\r", "");
+
+    let formatted_code = remove_comments(source_code)
+        .replace("\n", "")
+        .replace("\r", "");
 
     formatted_code
 }

@@ -1,0 +1,10 @@
+vim.api.nvim_exec(
+  [[
+  augroup HiwLang
+    autocmd!
+    autocmd BufRead,BufNewFile *.hiw set filetype=hiw
+  augroup END
+]],
+  false
+)
+vim.cmd "source ~/.config/nvim/syntax/hiw.vim"
