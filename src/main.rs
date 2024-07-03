@@ -81,4 +81,6 @@ fn main() {
 // TODO: Add "for" cycle
 // TODO: Add importing file (example: using "std.hiw"). First priority takes files from compiler path.
 // TODO: Add .type() function which will return type as STR.
+// TODO: Add showing lines in errors (lexer & parser)
+
 // FIXME: Fix wrong jump codes (in future broken cycles) in functions
