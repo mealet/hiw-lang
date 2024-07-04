@@ -1,10 +1,9 @@
 // VM (virtual machine) - low level "computer" that gives me tool for converting AST to byte code
 // and running it on this VM
 
-use crate::compiler::ByteCode;
 use crate::lexer::Value;
+use colored::Colorize;
 use std::collections::HashMap;
-use std::io::{stdout, Write};
 
 type PROGRAM = Vec<Operations>;
 
@@ -95,7 +94,7 @@ impl VM {
     }
 
     fn error(&self, message: &str) {
-        eprintln!("[RuntimeError]: {}", message);
+        eprintln!("{} {}", "[RuntimeError]".red(), message);
         std::process::exit(1);
     }
 

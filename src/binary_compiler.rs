@@ -1,5 +1,6 @@
 const VM_CODE: &'static str = r#"
 use std::collections::HashMap;
+use colored::Colorize;
 
 type PROGRAM = Vec<Operations>;
 
@@ -98,7 +99,7 @@ impl VM {
     }
 
     fn error(&self, message: &str) {
-        eprintln!("[RuntimeError]: {}", message);
+        eprintln!("{} {}", "[RuntimeError]".red(), message);
         std::process::exit(1);
     }
 

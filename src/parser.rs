@@ -1,6 +1,7 @@
 // Parser - hardest module in compiler (ig). It creates Binary Tree with abstract image of code
 
 #[allow(dead_code, unused)]
+use colored::Colorize;
 
 type LEXER = crate::lexer::Lexer;
 type VALUE = crate::lexer::Value;
@@ -73,16 +74,34 @@ impl Node {
 
 pub struct Parser {
     lexer: LEXER,
+    pub errors: Vec<String>,
 }
 
 impl Parser {
     pub fn new(lexer: LEXER) -> Self {
-        Parser { lexer }
+        Parser {
+            lexer,
+            errors: Vec::new(),
+        }
     }
 
-    fn error(&self, message: &str) {
-        println!("[ParseError]: {}", message);
-        std::process::exit(1);
+    fn error(&mut self, message: &str) {
+        let current_line_source =
+            self.lexer.source_code.lines().collect::<Vec<&str>>()[self.lexer.current_line - 1];
+
+        let error_message = format!(
+            "{} {}\n{}\n{}\n {} {}",
+            "error:".red(),
+            message,
+            format!("    |- {}", self.lexer.filename).cyan(),
+            "    |".cyan(),
+            format!("{}  |", self.lexer.current_line).cyan(),
+            current_line_source,
+        );
+
+        self.errors.push(error_message);
+
+        self.lexer.next_token();
     }
 
     fn term(&mut self) -> Node {
@@ -726,7 +745,7 @@ impl Parser {
                 if self.lexer.token.clone().unwrap() != Token::SEMICOLON {
                     self.error("';' expected after expression");
                 }
-                self.lexer.next_token()
+                self.lexer.next_token();
             }
         }
 

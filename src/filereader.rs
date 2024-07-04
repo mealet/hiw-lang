@@ -33,7 +33,7 @@ pub fn get_code(path_to_file: String) -> String {
     // formatting code
 
     let formatted_code = remove_comments(source_code)
-        .replace("\n", "")
+        // .replace("\n", "")
         .replace("\r", "");
 
     formatted_code

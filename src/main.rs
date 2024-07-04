@@ -42,15 +42,41 @@ fn main() {
         compile_mode = true;
     }
 
+    let filepath = std::path::Path::new(&args[1]);
+    let filename = filepath.file_name().unwrap();
+
     // Creating Lexer Analyzer
 
-    let input = filereader::get_code(args[1].clone());
-    let lexer = lexer::Lexer::new(input);
+    let input = filereader::get_code(filepath.to_str().unwrap().to_string());
+    let lexer = lexer::Lexer::new(input, filename.to_str().unwrap().to_string());
+
+    // Checking lexical analyzer errors
+
+    let mut lexer_clone = lexer.clone();
+    while lexer_clone.token != Some(lexer::Token::EOF) {
+        lexer_clone.next_token();
+    }
+
+    if lexer_clone.errors.len() > 0 {
+        for err in lexer_clone.errors {
+            eprintln!("{}", err);
+        }
+        std::process::exit(1);
+    }
 
     // Parsing Lexer Tokens
 
     let mut parser = parser::Parser::new(lexer);
     let abstract_syntax_tree = parser.parse();
+
+    // Checking parser errors
+
+    if parser.errors.len() > 0 {
+        for err in parser.errors {
+            eprintln!("{}", err);
+            std::process::exit(1);
+        }
+    }
 
     // Compiling Tree to byte code
 
@@ -81,6 +107,5 @@ fn main() {
 // TODO: Add "for" cycle
 // TODO: Add importing file (example: using "std.hiw"). First priority takes files from compiler path.
 // TODO: Add .type() function which will return type as STR.
-// TODO: Add showing lines in errors (lexer & parser)
 
 // FIXME: Fix wrong jump codes (in future broken cycles) in functions
