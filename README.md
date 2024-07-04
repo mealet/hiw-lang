@@ -7,7 +7,7 @@
 
   [Release] | [Quick Start] | [Installation] | [Documentation] | [Editors Support] | [License]
 
-  This is a simple programming language with variables, functions and manually byte-code controlling
+  A simple compiling language written in Rust
 </div>
 
 [Release]: https://github.com/mealet/hiw-lang/releases/latest
