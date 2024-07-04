@@ -39,6 +39,8 @@ pub enum Kind {
     FUNCTION_DEFINE,
     FUNCTION_CALL,
 
+    FILE_IMPORT,
+
     BRACK_ENUM,
     ARGS_ENUM,
     SLICE,
@@ -661,19 +663,6 @@ impl Parser {
                     }
                 };
             }
-            Token::RETURN => {
-                self.lexer.next_token();
-
-                node = Node::new(
-                    Kind::RETURN,
-                    None,
-                    Some(Box::new(self.expression())),
-                    None,
-                    None,
-                );
-
-                self.lexer.next_token();
-            }
             Token::OP => {
                 self.lexer.next_token();
 
@@ -684,6 +673,32 @@ impl Parser {
                     None,
                     None,
                 );
+            }
+            Token::USING => {
+                self.lexer.next_token();
+                self.lexer.next_token();
+
+                if self.lexer.token != Some(Token::STR) {
+                    self.error("Importing filename should be STR!");
+
+                    while self.lexer.token != Some(Token::SEMICOLON) {
+                        self.lexer.next_token();
+                    }
+
+                    return self.statement();
+                } else {
+                    let path_node = self.expression();
+
+                    node = Node::new(Kind::FILE_IMPORT, path_node.value, None, None, None);
+
+                    self.lexer.next_token();
+
+                    if self.lexer.token != Some(Token::SEMICOLON) {
+                        self.error("Expected ';' after import module");
+                    } else {
+                        self.lexer.next_token();
+                    }
+                }
             }
             //
             Token::LBRA => {

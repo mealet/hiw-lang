@@ -103,9 +103,4 @@ fn main() {
     }
 }
 
-// TODO: Add "range" (0..20 or function range(0,20) )
 // TODO: Add "for" cycle
-// TODO: Add importing file (example: using "std.hiw"). First priority takes files from compiler path.
-// TODO: Add .type() function which will return type as STR.
-
-// FIXME: Fix wrong jump codes (in future broken cycles) in functions

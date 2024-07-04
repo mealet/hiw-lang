@@ -50,8 +50,8 @@ pub enum Token {
     WHILE,
 
     // Macros
+    USING,
     DEFINE,
-    RETURN,
     OP,
 
     // End of Line
@@ -125,8 +125,8 @@ impl Lexer {
             ("else".to_string(), Token::ELSE),
             ("while".to_string(), Token::WHILE),
             //
+            ("using".to_string(), Token::USING),
             ("define".to_string(), Token::DEFINE),
-            ("return".to_string(), Token::RETURN),
             ("op!".to_string(), Token::OP),
         ]);
 

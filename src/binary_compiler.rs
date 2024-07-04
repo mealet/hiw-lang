@@ -37,6 +37,7 @@ pub enum Operations {
     ARG(Value),
     FETCH,
     STORE,
+    TYPE,
     //
     PRINT,
     INPUT,
@@ -67,6 +68,7 @@ lazy_static! {
         m.insert("VAR", Operations::VAR);
         m.insert("FETCH", Operations::FETCH);
         m.insert("STORE", Operations::STORE);
+        m.insert("TYPE", Operations::TYPE);
         m.insert("PRINT", Operations::PRINT);
         m.insert("INPUT", Operations::INPUT);
         m.insert("LT", Operations::LT);
@@ -87,6 +89,7 @@ pub struct Function {
     pub name: Value,
     pub arguments: Vec<Value>,
     pub program: PROGRAM,
+    pub jump_codes: Vec<usize>,
 }
 
 impl VM {
@@ -130,10 +133,12 @@ impl VM {
                             self.stack.push(Value::STR(format!("{}{}", a, b)));
                         }
                         (Value::ARRAY(a), Value::ARRAY(b)) => {
-                            let mut _temp_a = a.clone();
-                            let mut _temp_b = b.clone();
+                            let mut _temp_a: Vec<Value> = a.clone();
+                            let mut _temp_b: Vec<Value> = b.clone();
 
-                            let temp_array = _temp_a.append(&mut _temp_b);
+                            let _ = _temp_a.append(&mut _temp_b);
+
+                            self.stack.push(Value::ARRAY(_temp_a));
                         }
                         (Value::BOOL(a), Value::BOOL(b)) => {
                             let boolean_value = match (a, b) {
@@ -178,6 +183,8 @@ impl VM {
                             }
 
                             let _f = format!("[{}]{}", values_array.join(","), b);
+
+                            self.stack.push(Value::STR(_f));
                         }
                         (Value::STR(a), Value::ARRAY(b)) => {
                             let mut values_array: Vec<String> = Vec::new();
@@ -194,6 +201,8 @@ impl VM {
                             }
 
                             let _f = format!("[{}]{}", values_array.join(","), a);
+
+                            self.stack.push(Value::STR(_f));
                         }
 
                         // Other values we cannot implement
@@ -418,6 +427,18 @@ impl VM {
 
                     pc += 2
                 }
+                Operations::TYPE => {
+                    let stack_value = self.stack.pop().unwrap();
+
+                    match stack_value {
+                        Value::INT(_) => self.stack.push(Value::STR("INT".to_string())),
+                        Value::STR(_) => self.stack.push(Value::STR("STR".to_string())),
+                        Value::BOOL(_) => self.stack.push(Value::STR("BOOL".to_string())),
+                        Value::ARRAY(_) => self.stack.push(Value::STR("ARRAY".to_string())),
+                    };
+
+                    pc += 1;
+                }
                 Operations::PRINT => {
                     let print_value = self.stack.pop().unwrap();
                     match print_value {
@@ -487,7 +508,6 @@ impl VM {
                             self.error("Jump Code is bigger than byte code!");
                         } else {
                             let stack_value = self.stack.pop().unwrap_or_else(|| {
-                                println!("{:?}", self.stack);
                                 self.error("Stack error with boolean operation!");
                                 Value::BOOL(false)
                             });
@@ -718,6 +738,7 @@ impl fmt::Display for Operations {
             Operations::SLICE => "Operations::SLICE".to_string(),
             Operations::DROP => "Operations::DROP".to_string(),
             Operations::INPUT => "Operations::INPUT".to_string(),
+            Operations::TYPE => "Operations::TYPE".to_string(),
         };
         write!(f, "{}", s)
     }
