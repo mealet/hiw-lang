@@ -239,6 +239,80 @@ impl Compiler {
                 self.program[(false_jmp_adress + 1) as usize] =
                     Operations::ARG(Value::INT(self.pc));
             }
+            Kind::FOR => {
+                // initializating counter variable
+
+                let counter_name = format!("counter{}", self.pc);
+                let varname = node.value.unwrap();
+
+                self.gen(Operations::PUSH);
+                self.gen(Operations::ARG(Value::INT(0)));
+
+                self.gen(Operations::STORE);
+                self.gen(Operations::ARG(Value::STR(counter_name.clone())));
+
+                // setting up condition
+
+                let condition_adress = self.pc;
+
+                self.compile(*node.op1.clone().unwrap());
+
+                self.gen(Operations::FETCH);
+                self.gen(Operations::ARG(Value::STR(counter_name.clone())));
+
+                self.gen(Operations::BT);
+
+                // if condition is true
+
+                self.gen(Operations::JZ);
+
+                self.jump_codes.push(self.pc as usize);
+
+                self.gen(Operations::ARG(Value::INT(self.pc + 3)));
+
+                // if condition is false
+
+                self.gen(Operations::JMP);
+                self.jump_codes.push(self.pc as usize);
+
+                let false_condition_adress = self.pc;
+                self.gen(Operations::ARG(Value::INT(0)));
+
+                // storing variable with slice from iterable
+                self.compile(*node.op1.clone().unwrap());
+                self.gen(Operations::FETCH);
+                self.gen(Operations::ARG(Value::STR(counter_name.clone())));
+
+                self.gen(Operations::SLICE);
+
+                self.gen(Operations::STORE);
+                self.gen(Operations::ARG(varname));
+
+                // compiling statement block
+                self.compile(*node.op2.clone().unwrap());
+
+                // increasing counter variable
+                self.gen(Operations::FETCH);
+                self.gen(Operations::ARG(Value::STR(counter_name.clone())));
+
+                self.gen(Operations::PUSH);
+                self.gen(Operations::ARG(Value::INT(1)));
+
+                self.gen(Operations::ADD);
+
+                self.gen(Operations::STORE);
+                self.gen(Operations::ARG(Value::STR(counter_name.clone())));
+
+                // returning to condition
+                self.gen(Operations::JMP);
+                self.jump_codes.push(self.pc as usize);
+                self.gen(Operations::ARG(Value::INT(condition_adress)));
+
+                // replacing adresses
+
+                self.program[false_condition_adress as usize] =
+                    Operations::ARG(Value::INT(self.pc));
+            }
             Kind::FUNCTION_DEFINE => {
                 let function_name = node.value.unwrap();
 

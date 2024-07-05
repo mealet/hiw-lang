@@ -49,10 +49,14 @@ pub enum Token {
     IF,
     ELSE,
     WHILE,
+    FOR,
+
+    // Keywords
+    DEFINE,
+    USING,
+    IN,
 
     // Macros
-    USING,
-    DEFINE,
     OP,
 
     // End Of File
@@ -124,9 +128,12 @@ impl Lexer {
             ("if".to_string(), Token::IF),
             ("else".to_string(), Token::ELSE),
             ("while".to_string(), Token::WHILE),
+            ("for".to_string(), Token::FOR),
             //
             ("using".to_string(), Token::USING),
             ("define".to_string(), Token::DEFINE),
+            ("in".to_string(), Token::IN),
+            //
             ("op!".to_string(), Token::OP),
         ]);
 

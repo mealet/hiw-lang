@@ -606,6 +606,23 @@ impl VM {
                                 self.stack.push(Value::BOOL(false));
                             }
                         }
+
+                        // Array and Int
+                        (Value::ARRAY(left), Value::INT(right)) => {
+                            if (left.len() as i32) < right {
+                                self.stack.push(Value::BOOL(true));
+                            } else {
+                                self.stack.push(Value::BOOL(false));
+                            }
+                        }
+                        (Value::INT(left), Value::ARRAY(right)) => {
+                            if (right.len() as i32) < left {
+                                self.stack.push(Value::BOOL(true));
+                            } else {
+                                self.stack.push(Value::BOOL(false));
+                            }
+                        }
+
                         _ => {
                             self.error(
                                 format!(
@@ -640,6 +657,22 @@ impl VM {
                         }
                         (Value::ARRAY(left), Value::ARRAY(right)) => {
                             if left.len() > right.len() {
+                                self.stack.push(Value::BOOL(true));
+                            } else {
+                                self.stack.push(Value::BOOL(false));
+                            }
+                        }
+
+                        // Array and Int
+                        (Value::ARRAY(left), Value::INT(right)) => {
+                            if left.len() as i32 > right {
+                                self.stack.push(Value::BOOL(true));
+                            } else {
+                                self.stack.push(Value::BOOL(false));
+                            }
+                        }
+                        (Value::INT(left), Value::ARRAY(right)) => {
+                            if right.len() as i32 > left {
                                 self.stack.push(Value::BOOL(true));
                             } else {
                                 self.stack.push(Value::BOOL(false));
@@ -703,7 +736,12 @@ impl VM {
                                 self.stack
                                     .push(slicable_array[slice_index as usize].clone());
                             }
-                            _ => self.error("Cannot get slice from type exclude STR or ARRAY"),
+                            Value::INT(slicable_int) => {
+                                let arr = (0..=slicable_int).collect::<Vec<i32>>();
+                                self.stack.push(Value::INT(arr[slice_index as usize]));
+                            }
+                            _ => self
+                                .error("Cannot get slice from any type exclude STR, ARRAY and INT"),
                         },
                         _ => {
                             self.error("Cannot get slice of non-integer index!");

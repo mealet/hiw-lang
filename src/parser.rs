@@ -35,6 +35,7 @@ pub enum Kind {
     IF,
     IF_ELSE,
     WHILE,
+    FOR,
 
     FUNCTION_DEFINE,
     FUNCTION_CALL,
@@ -584,7 +585,7 @@ impl Parser {
                 node = Node::new(
                     Kind::IF,
                     None,
-                    Some(Box::new(self.paren_expression())),
+                    Some(Box::new(self.expression())),
                     None,
                     None,
                 );
@@ -604,10 +605,40 @@ impl Parser {
                 node = Node::new(
                     Kind::WHILE,
                     None,
-                    Some(Box::new(self.paren_expression())),
+                    Some(Box::new(self.expression())),
                     Some(Box::new(self.statement())),
                     None,
                 );
+
+                self.lexer.next_token();
+            }
+            Token::FOR => {
+                self.lexer.next_token();
+
+                if self.lexer.token != Some(Token::ID) {
+                    self.error("Variable name expected after 'for' keyword");
+
+                    while self.lexer.token != Some(Token::RBRA) {
+                        self.lexer.next_token();
+                    }
+                }
+
+                node = Node::new(Kind::FOR, self.lexer.value.clone(), None, None, None);
+
+                self.lexer.next_token();
+
+                if self.lexer.token != Some(Token::IN) {
+                    self.error("Keyword 'in' expected after defining variable in 'for' cycle!");
+
+                    while self.lexer.token != Some(Token::RBRA) {
+                        self.lexer.next_token();
+                    }
+                };
+
+                self.lexer.next_token();
+
+                node.op1 = Some(Box::new(self.expression()));
+                node.op2 = Some(Box::new(self.statement()));
 
                 self.lexer.next_token();
             }
