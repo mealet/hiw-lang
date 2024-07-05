@@ -38,6 +38,7 @@ pub enum Token {
     DOT,
     COMMA,
     COLON,
+    UNDERLINE,
     // Comparsions
     LESS,
     BIGGER,
@@ -54,8 +55,6 @@ pub enum Token {
     DEFINE,
     OP,
 
-    // End of Line
-    EOL,
     // End Of File
     EOF,
 }
@@ -96,6 +95,7 @@ impl Lexer {
             (')', Token::RPAR),
             ('+', Token::PLUS),
             ('-', Token::MINUS),
+            ('_', Token::UNDERLINE),
             ('*', Token::MULTIPLY),
             ('/', Token::DIVIDE),
             ('=', Token::EQUAL),
@@ -279,7 +279,7 @@ impl Lexer {
                     }
                 }
                 _ if self.char.is_alphabetic() => {
-                    let allowed_chars_in_id = ['!'];
+                    let allowed_chars_in_id = ['!', '_', '-', '.'];
 
                     let mut id = String::new();
                     while self.char.is_alphanumeric() || allowed_chars_in_id.contains(&self.char) {

@@ -11,3 +11,11 @@ define range(start, end) {
 define type(arg) {
   op!(FETCH arg TYPE);
 };
+
+define to_int(arg) {
+  op!(FETCH arg TO_INT);
+};
+
+define to_str(arg) {
+  op!(FETCH arg TO_STR);
+};

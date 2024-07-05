@@ -1,10 +1,7 @@
 const VM_CODE: &'static str = r#"
 use std::collections::HashMap;
-use colored::Colorize;
 
 type PROGRAM = Vec<Operations>;
-
-
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum Value {
@@ -37,7 +34,11 @@ pub enum Operations {
     ARG(Value),
     FETCH,
     STORE,
+    //
     TYPE,
+    LEN,
+    TO_INT,
+    TO_STR,
     //
     PRINT,
     INPUT,
@@ -52,36 +53,8 @@ pub enum Operations {
     //
     DROP,
     POP,
+    CLEAN,
     HALT,
-}
-
-lazy_static! {
-    pub static ref OPERATIONS_MAP: HashMap<&'static str, Operations> = {
-        let mut m = HashMap::new();
-        m.insert("PUSH", Operations::PUSH);
-        m.insert("ARR", Operations::ARR);
-        m.insert("SLICE", Operations::SLICE);
-        m.insert("ADD", Operations::ADD);
-        m.insert("SUB", Operations::SUB);
-        m.insert("DIV", Operations::DIV);
-        m.insert("MULT", Operations::MULT);
-        m.insert("VAR", Operations::VAR);
-        m.insert("FETCH", Operations::FETCH);
-        m.insert("STORE", Operations::STORE);
-        m.insert("TYPE", Operations::TYPE);
-        m.insert("PRINT", Operations::PRINT);
-        m.insert("INPUT", Operations::INPUT);
-        m.insert("LT", Operations::LT);
-        m.insert("BT", Operations::BT);
-        m.insert("EQ", Operations::EQ);
-        m.insert("JMP", Operations::JMP);
-        m.insert("JZ", Operations::JZ);
-        m.insert("JNZ", Operations::JNZ);
-        m.insert("DROP", Operations::DROP);
-        m.insert("POP", Operations::POP);
-        m.insert("HALT", Operations::HALT);
-        m
-    };
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -96,13 +69,41 @@ impl VM {
     pub fn new(program: PROGRAM) -> Self {
         VM {
             stack: Vec::new(),
-            program: program,
+            program,
             variables: HashMap::new(),
         }
     }
 
+    // helping function
+
+    fn array_to_string(&self, arr: Vec<Value>) -> String {
+        let mut stringified_array: Vec<String> = Vec::new();
+
+        for i in arr {
+            match i {
+                Value::INT(int) => stringified_array.push(int.to_string()),
+                Value::STR(str) => stringified_array.push(str),
+                Value::BOOL(bool) => {
+                    if bool {
+                        stringified_array.push("true".to_string())
+                    } else {
+                        stringified_array.push("false".to_string())
+                    }
+                }
+                Value::ARRAY(arr) => {
+                    let str_arr = self.array_to_string(arr);
+                    stringified_array.push(str_arr.clone());
+                }
+            }
+        }
+
+        format!("[{}]", stringified_array.join(","))
+    }
+
+    // main
+
     fn error(&self, message: &str) {
-        eprintln!("{} {}", "[RuntimeError]".red(), message);
+        eprintln!("{} {}", "\x1b[31m[RuntimeError]\x1b[0m", message);
         std::process::exit(1);
     }
 
@@ -286,7 +287,7 @@ impl VM {
                                 self.error("Cannot divide string which length is less 2");
                             }
 
-                            let final_string_length = a.len() / 2;
+                            let final_string_length = a.len() / b as usize;
                             let _chars = a
                                 .clone()
                                 .chars()
@@ -317,6 +318,10 @@ impl VM {
                 Operations::POP => {
                     self.stack.pop();
                     pc += 1
+                }
+                Operations::CLEAN => {
+                    let _ = self.stack.clear();
+                    pc += 1;
                 }
                 Operations::DROP => {
                     match arg {
@@ -439,6 +444,56 @@ impl VM {
 
                     pc += 1;
                 }
+                Operations::TO_INT => {
+                    let stack_value = self.stack.pop().unwrap();
+
+                    match stack_value {
+                        Value::INT(_) => self.stack.push(stack_value),
+                        Value::STR(string) => {
+                            let try_parse = match string.trim().parse::<i32>() {
+                                Ok(val) => self.stack.push(Value::INT(val)),
+                                Err(_) => {
+                                    self.stack.push(Value::STR("INT_PARSE_ERROR".to_string()))
+                                }
+                            };
+                        }
+                        _ => self
+                            .stack
+                            .push(Value::STR("INT_PARSE_NOT_IMPLEMENTED".to_string())),
+                    };
+
+                    pc += 1;
+                }
+                Operations::TO_STR => {
+                    let stack_value = self.stack.pop().unwrap();
+
+                    match stack_value {
+                        Value::INT(int) => self.stack.push(Value::STR(int.to_string())),
+                        Value::STR(_) => self.stack.push(stack_value),
+                        Value::BOOL(bool) => {
+                            if bool {
+                                self.stack.push(Value::STR("true".to_string()))
+                            } else {
+                                self.stack.push(Value::STR("false".to_string()))
+                            }
+                        }
+                        Value::ARRAY(arr) => self.stack.push(Value::STR(self.array_to_string(arr))),
+                    }
+
+                    pc += 1;
+                }
+                Operations::LEN => {
+                    let stack_value = self.stack.pop().unwrap();
+
+                    match stack_value {
+                        Value::INT(_) => self.stack.push(stack_value),
+                        Value::STR(str) => self.stack.push(Value::INT(str.len() as i32)),
+                        Value::ARRAY(arr) => self.stack.push(Value::INT(arr.len() as i32)),
+                        _ => self.stack.push(Value::STR("LEN_NOT_COVERED".to_string())),
+                    }
+
+                    pc += 1;
+                }
                 Operations::PRINT => {
                     let print_value = self.stack.pop().unwrap();
                     match print_value {
@@ -458,24 +513,7 @@ impl VM {
                             }
                         }
                         Value::ARRAY(array) => {
-                            print!("\n[");
-
-                            for (index, item) in array.iter().enumerate() {
-                                let printable_value = match item {
-                                    Value::INT(i) => &i.to_string(),
-                                    Value::STR(s) => &format!("\"{}\"", s),
-                                    Value::BOOL(b) => &b.to_string(),
-                                    Value::ARRAY(_) => &("ERR".to_string()),
-                                };
-
-                                print!("{}", printable_value);
-
-                                if index != array.len() - 1 {
-                                    print!(", ");
-                                }
-                            }
-
-                            print!("]");
+                            println!("{}", self.array_to_string(array));
                         }
                     }
 
@@ -643,10 +681,6 @@ impl VM {
                         self.stack.pop();
                     }
 
-                    for _ in 0..self.stack.len() {
-                        array_result.push(self.stack.pop().unwrap());
-                    }
-
                     self.stack.push(Value::ARRAY(array_result));
 
                     pc += 1;
@@ -700,6 +734,7 @@ impl VM {
 "#;
 
 use crate::{lexer::Value, vm::Operations};
+use colored::Colorize;
 use std::{fmt, io::Write};
 
 impl fmt::Display for Value {
@@ -739,6 +774,10 @@ impl fmt::Display for Operations {
             Operations::DROP => "Operations::DROP".to_string(),
             Operations::INPUT => "Operations::INPUT".to_string(),
             Operations::TYPE => "Operations::TYPE".to_string(),
+            Operations::LEN => "Operations::LEN".to_string(),
+            Operations::TO_INT => "Operations::TO_INT".to_string(),
+            Operations::TO_STR => "Operations::TO_STR".to_string(),
+            Operations::CLEAN => "Operations::CLEAN".to_string(),
         };
         write!(f, "{}", s)
     }
@@ -783,12 +822,25 @@ fn main() {{
             .output()
             .expect("Cannot compile VM");
 
-        println!("{:?}", String::from_utf8_lossy(&compiler.stderr));
-
         for fname in filenames {
             let _ = std::fs::remove_file(fname);
         }
 
-        println!("COMPILE MODE | {} successfuly compiled!", &self.name);
+        match compiler.status.code() {
+            Some(0) => {
+                println!(
+                    "{} '{}' successfuly compiled!",
+                    "[BinaryCompiler]:".cyan(),
+                    &self.name
+                );
+            }
+            _ => {
+                eprintln!(
+                    "{} An error occured while compiling '{}'",
+                    "[BinaryCompiler]:".red(),
+                    &self.name
+                )
+            }
+        }
     }
 }

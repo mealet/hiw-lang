@@ -16,6 +16,39 @@ pub struct Compiler {
     pub pc: i32,
 }
 
+lazy_static! {
+    pub static ref OPERATIONS_MAP: HashMap<&'static str, Operations> = {
+        let mut m = HashMap::new();
+        m.insert("PUSH", Operations::PUSH);
+        m.insert("ARR", Operations::ARR);
+        m.insert("SLICE", Operations::SLICE);
+        m.insert("ADD", Operations::ADD);
+        m.insert("SUB", Operations::SUB);
+        m.insert("DIV", Operations::DIV);
+        m.insert("MULT", Operations::MULT);
+        m.insert("VAR", Operations::VAR);
+        m.insert("FETCH", Operations::FETCH);
+        m.insert("STORE", Operations::STORE);
+        m.insert("TYPE", Operations::TYPE);
+        m.insert("TO_INT", Operations::TO_INT);
+        m.insert("TO_STR", Operations::TO_STR);
+        m.insert("LEN", Operations::LEN);
+        m.insert("PRINT", Operations::PRINT);
+        m.insert("INPUT", Operations::INPUT);
+        m.insert("LT", Operations::LT);
+        m.insert("BT", Operations::BT);
+        m.insert("EQ", Operations::EQ);
+        m.insert("JMP", Operations::JMP);
+        m.insert("JZ", Operations::JZ);
+        m.insert("JNZ", Operations::JNZ);
+        m.insert("DROP", Operations::DROP);
+        m.insert("POP", Operations::POP);
+        m.insert("CLEAN", Operations::CLEAN);
+        m.insert("HALT", Operations::HALT);
+        m
+    };
+}
+
 // WARNING: Compare struct with binary compiler
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -79,6 +112,8 @@ impl Compiler {
                 self.gen(Operations::ARG(node.value.unwrap()));
             }
             Kind::ARRAY => {
+                self.gen(Operations::CLEAN);
+
                 self.compile(*node.op1.clone().unwrap());
 
                 self.gen(Operations::ARR);
@@ -218,6 +253,13 @@ impl Compiler {
                     .collect::<Vec<Operations>>();
 
                 let mut program_compiler = Compiler::new();
+
+                for func in self.functions.clone() {
+                    program_compiler.functions.insert(func.0, func.1);
+                }
+
+                // Compiling
+
                 let program_bytes = program_compiler
                     .compile(*node.op2.clone().unwrap())
                     .program
@@ -270,17 +312,35 @@ impl Compiler {
 
                         // Implementing arguments
 
-                        let mut args_compiler = Compiler::new();
-                        let mut args_bytes = args_compiler
+                        let mut compiler1 = Compiler::new();
+                        let mut args_node_1 = compiler1
                             .compile(*node.op1.clone().unwrap())
                             .program
                             .into_iter()
                             .collect::<Vec<Operations>>();
 
+                        let mut args_bytes = Vec::new();
+                        args_bytes.append(&mut args_node_1);
+
+                        // Checking for second node
+
+                        if let Some(node_2) = node.op2.clone() {
+                            let mut compiler2 = Compiler::new();
+                            let mut args_node_2 = compiler2
+                                .compile(*node_2)
+                                .program
+                                .into_iter()
+                                .collect::<Vec<Operations>>();
+
+                            args_bytes.append(&mut args_node_2);
+                        }
+
+                        // Formatting and comparing args
+
                         let args_length = args_bytes.len();
 
                         if args_length / 2 < function_object.arguments.len() {
-                            if let Value::STR(func_name) = function_object.name {
+                            if let Value::STR(func_name) = function_object.clone().name {
                                 self.error(
                                     format!(
                                         "Not enough arguments for calling '{}' function!",
@@ -290,7 +350,7 @@ impl Compiler {
                                 );
                             }
                         } else if args_length / 2 > function_object.arguments.len() {
-                            if let Value::STR(func_name) = function_object.name {
+                            if let Value::STR(func_name) = function_object.clone().name {
                                 self.error(
                                     format!("Too much arguments for '{}' function!", func_name)
                                         .as_str(),
@@ -332,7 +392,7 @@ impl Compiler {
                         });
                     } else {
                         self.error(
-                            format!("Function '{}' is not defined!", &function_name).as_str(),
+                            format!("Function '{}' is not defined here!", &function_name).as_str(),
                         );
                     }
                 }
@@ -364,10 +424,9 @@ impl Compiler {
 
                 for arg in arguments {
                     if let Operations::ARG(Value::STR(string_argument)) = arg {
-                        if crate::vm::OPERATIONS_MAP.contains_key(&string_argument.as_str()) {
-                            let matched_operation = crate::vm::OPERATIONS_MAP
-                                .get(&string_argument.as_str())
-                                .unwrap();
+                        if OPERATIONS_MAP.contains_key(&string_argument.as_str()) {
+                            let matched_operation =
+                                OPERATIONS_MAP.get(&string_argument.as_str()).unwrap();
 
                             if [Operations::JZ, Operations::JNZ, Operations::JMP]
                                 .contains(matched_operation)

@@ -104,3 +104,10 @@ fn main() {
 }
 
 // TODO: Add "for" cycle
+// TODO: Add functions:
+//              <ARRAY, STR>.len()
+//              <ARRAY>.push(arg)
+//              <ARRAY>.join(<STR>)
+//
+// FIXME: Fix jump code if using function in function
+// FIXME: Array in Array concatenating wrong
