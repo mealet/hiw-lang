@@ -1,5 +1,6 @@
 // Lexer Analyzer - thing that gives me abstract data types (tokens) from just a string.
 
+use colored::Colorize;
 #[allow(unused)]
 use std::collections::HashMap;
 use std::process::exit;
@@ -37,6 +38,7 @@ pub enum Token {
     DOT,
     COMMA,
     COLON,
+    UNDERLINE,
     // Comparsions
     LESS,
     BIGGER,
@@ -47,11 +49,16 @@ pub enum Token {
     IF,
     ELSE,
     WHILE,
+    FOR,
+
+    // Keywords
+    DEFINE,
+    USING,
+    IN,
 
     // Macros
-    DEFINE,
-    RETURN,
     OP,
+
     // End Of File
     EOF,
 }
@@ -66,24 +73,33 @@ pub enum Value {
 
 #[derive(Debug, Clone)]
 pub struct Lexer {
+    pub source_code: String,
+    pub filename: String,
+
     pub symbols: HashMap<char, Token>,
     pub words: HashMap<String, Token>,
+    pub errors: Vec<String>,
+
     pub input: Vec<char>,
     pub position: usize,
+    pub current_line: usize,
     pub char: char,
+
     pub token: Option<Token>,
     pub value: Option<Value>,
+
     pub is_string: bool,
     pub space_before: bool,
 }
 
 impl Lexer {
-    pub fn new(input: String) -> Self {
+    pub fn new(input: String, filename: String) -> Self {
         let symbols = HashMap::from([
             ('(', Token::LPAR),
             (')', Token::RPAR),
             ('+', Token::PLUS),
             ('-', Token::MINUS),
+            ('_', Token::UNDERLINE),
             ('*', Token::MULTIPLY),
             ('/', Token::DIVIDE),
             ('=', Token::EQUAL),
@@ -112,17 +128,24 @@ impl Lexer {
             ("if".to_string(), Token::IF),
             ("else".to_string(), Token::ELSE),
             ("while".to_string(), Token::WHILE),
+            ("for".to_string(), Token::FOR),
             //
+            ("using".to_string(), Token::USING),
             ("define".to_string(), Token::DEFINE),
-            ("return".to_string(), Token::RETURN),
+            ("in".to_string(), Token::IN),
+            //
             ("op!".to_string(), Token::OP),
         ]);
 
         let mut lexer = Lexer {
             symbols,
             words,
+            errors: Vec::new(),
             input: input.chars().collect(),
+            source_code: input,
+            filename,
             position: 0,
+            current_line: 1,
             char: ' ',
             token: None,
             value: None,
@@ -134,9 +157,23 @@ impl Lexer {
         lexer
     }
 
-    fn error(&self, message: String) {
-        eprintln!("[AnalyzerError]: {}", message);
-        exit(1);
+    fn error(&mut self, message: String) {
+        let current_line_source =
+            self.source_code.lines().collect::<Vec<&str>>()[self.current_line - 1];
+
+        let error_message = format!(
+            "{} {}\n{}\n{}\n {} {}",
+            "error:".red(),
+            message,
+            format!("    |- {}", self.filename).cyan(),
+            "    |".cyan(),
+            format!("{}  |", self.current_line).cyan(),
+            current_line_source,
+        );
+
+        self.errors.push(error_message);
+
+        self.getc();
     }
 
     pub fn getc(&mut self) {
@@ -154,6 +191,10 @@ impl Lexer {
         while self.token.is_none() {
             match self.char {
                 '\0' => self.token = Some(Token::EOF),
+                '\n' => {
+                    self.current_line += 1;
+                    self.getc();
+                }
                 _ if self.char.is_whitespace() => {
                     if self.is_string {
                         self.space_before = true;
@@ -245,7 +286,7 @@ impl Lexer {
                     }
                 }
                 _ if self.char.is_alphabetic() => {
-                    let allowed_chars_in_id = ['!'];
+                    let allowed_chars_in_id = ['!', '_', '-', '.'];
 
                     let mut id = String::new();
                     while self.char.is_alphanumeric() || allowed_chars_in_id.contains(&self.char) {
@@ -278,7 +319,7 @@ impl Lexer {
                     }
                 }
                 _ => {
-                    let _ = self.error(format!("Unexpected symbol: {}", self.char));
+                    let _ = self.error(format!("Undefined symbol: {}", self.char));
                 }
             }
         }

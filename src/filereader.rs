@@ -33,8 +33,28 @@ pub fn get_code(path_to_file: String) -> String {
     // formatting code
 
     let formatted_code = remove_comments(source_code)
-        .replace("\n", "")
+        // .replace("\n", "")
         .replace("\r", "");
 
     formatted_code
+}
+
+pub fn search_import(path_to_file: String) -> String {
+    // checking if input string is only filename
+    let current_dir = std::env::current_dir().expect("Failed to get current directory");
+    let current_dir_file = current_dir.join(&path_to_file);
+
+    let exe_path = std::env::current_exe().expect("Failed to get executable directory");
+    let exe_dir = exe_path
+        .parent()
+        .expect("Faield to get executable directory");
+    let exe_path_file = exe_dir.join(&path_to_file);
+
+    match (current_dir_file.exists(), exe_path_file.exists()) {
+        (false, false) => return "FILE_NOT_FOUND_1_HIW_ERROR".to_string(),
+        (true, false) => return current_dir_file.to_str().unwrap().to_string(),
+        // First priority to executable path modules
+        (false, true) => return exe_path_file.to_str().unwrap().to_string(),
+        (true, true) => return exe_path_file.to_str().unwrap().to_string(),
+    }
 }

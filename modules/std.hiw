@@ -1,0 +1,21 @@
+define range(start, end) {
+  counter = 0;
+  while (counter < end + 1) {
+    op!(FETCH counter);
+    counter = counter + 1;
+  };
+
+  op!(ARR);
+};
+
+define type(arg) {
+  op!(FETCH arg TYPE);
+};
+
+define to_int(arg) {
+  op!(FETCH arg TO_INT);
+};
+
+define to_str(arg) {
+  op!(FETCH arg TO_STR);
+};

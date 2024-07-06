@@ -5,13 +5,48 @@ use crate::{
     parser::{Kind, Node},
     vm::Operations,
 };
+use colored::Colorize;
 use std::collections::HashMap;
 
 #[derive(Debug, Clone)]
 pub struct Compiler {
     program: Vec<Operations>,
     functions: HashMap<String, crate::vm::Function>,
+    jump_codes: Vec<usize>,
     pub pc: i32,
+}
+
+lazy_static! {
+    pub static ref OPERATIONS_MAP: HashMap<&'static str, Operations> = {
+        let mut m = HashMap::new();
+        m.insert("PUSH", Operations::PUSH);
+        m.insert("ARR", Operations::ARR);
+        m.insert("SLICE", Operations::SLICE);
+        m.insert("ADD", Operations::ADD);
+        m.insert("SUB", Operations::SUB);
+        m.insert("DIV", Operations::DIV);
+        m.insert("MULT", Operations::MULT);
+        m.insert("VAR", Operations::VAR);
+        m.insert("FETCH", Operations::FETCH);
+        m.insert("STORE", Operations::STORE);
+        m.insert("TYPE", Operations::TYPE);
+        m.insert("TO_INT", Operations::TO_INT);
+        m.insert("TO_STR", Operations::TO_STR);
+        m.insert("LEN", Operations::LEN);
+        m.insert("PRINT", Operations::PRINT);
+        m.insert("INPUT", Operations::INPUT);
+        m.insert("LT", Operations::LT);
+        m.insert("BT", Operations::BT);
+        m.insert("EQ", Operations::EQ);
+        m.insert("JMP", Operations::JMP);
+        m.insert("JZ", Operations::JZ);
+        m.insert("JNZ", Operations::JNZ);
+        m.insert("DROP", Operations::DROP);
+        m.insert("POP", Operations::POP);
+        m.insert("CLEAN", Operations::CLEAN);
+        m.insert("HALT", Operations::HALT);
+        m
+    };
 }
 
 // WARNING: Compare struct with binary compiler
@@ -20,6 +55,7 @@ pub struct Compiler {
 pub struct ByteCode {
     pub program: Vec<Operations>,
     pub functions: HashMap<String, crate::vm::Function>,
+    pub jump_codes: Vec<usize>,
 }
 
 impl Compiler {
@@ -27,12 +63,13 @@ impl Compiler {
         Compiler {
             program: Vec::new(),
             functions: HashMap::new(),
+            jump_codes: Vec::new(),
             pc: 0,
         }
     }
 
     pub fn error(&self, message: &str) {
-        eprintln!("{}", message);
+        eprintln!("{} {}", "[CompilerError]:".red(), message);
         std::process::exit(1);
     }
 
@@ -51,6 +88,7 @@ impl Compiler {
         return ByteCode {
             program: self.program.clone(),
             functions: self.functions.clone(),
+            jump_codes: self.jump_codes.clone(),
         };
     }
 
@@ -74,6 +112,8 @@ impl Compiler {
                 self.gen(Operations::ARG(node.value.unwrap()));
             }
             Kind::ARRAY => {
+                self.gen(Operations::CLEAN);
+
                 self.compile(*node.op1.clone().unwrap());
 
                 self.gen(Operations::ARR);
@@ -126,11 +166,13 @@ impl Compiler {
                 self.compile(*node.op1.clone().unwrap());
 
                 self.gen(Operations::JZ);
+                self.jump_codes.push(self.pc as usize);
                 self.gen(Operations::ARG(Value::INT(self.pc + 3)));
 
                 let else_adress = self.pc;
 
                 self.gen(Operations::JMP);
+                self.jump_codes.push(self.pc as usize);
                 self.gen(Operations::ARG(Value::INT(0)));
 
                 self.compile(*node.op2.clone().unwrap());
@@ -144,11 +186,13 @@ impl Compiler {
                 self.compile(*node.op1.clone().unwrap());
 
                 self.gen(Operations::JZ);
+                self.jump_codes.push(self.pc as usize);
                 self.gen(Operations::ARG(Value::INT(self.pc + 3)));
 
                 let else_jmp_adress = self.pc;
 
                 self.gen(Operations::JMP);
+                self.jump_codes.push(self.pc as usize);
                 self.gen(Operations::ARG(Value::INT(0)));
 
                 self.compile(*node.op2.clone().unwrap());
@@ -156,6 +200,7 @@ impl Compiler {
                 let complete_adress = self.pc;
 
                 self.gen(Operations::JMP);
+                self.jump_codes.push(self.pc as usize);
                 self.gen(Operations::ARG(Value::INT(0)));
 
                 let else_adress = self.pc;
@@ -176,19 +221,96 @@ impl Compiler {
                 self.compile(*node.op1.clone().unwrap());
 
                 self.gen(Operations::JZ);
+                self.jump_codes.push(self.pc as usize);
                 self.gen(Operations::ARG(Value::INT(self.pc + 3)));
 
                 let false_jmp_adress = self.pc;
 
                 self.gen(Operations::JMP);
+                self.jump_codes.push(self.pc as usize);
                 self.gen(Operations::ARG(Value::INT(0)));
 
                 self.compile(*node.op2.clone().unwrap());
 
                 self.gen(Operations::JMP);
+                self.jump_codes.push(self.pc as usize);
                 self.gen(Operations::ARG(Value::INT(condition_adress)));
 
                 self.program[(false_jmp_adress + 1) as usize] =
+                    Operations::ARG(Value::INT(self.pc));
+            }
+            Kind::FOR => {
+                // initializating counter variable
+
+                let counter_name = format!("counter{}", self.pc);
+                let varname = node.value.unwrap();
+
+                self.gen(Operations::PUSH);
+                self.gen(Operations::ARG(Value::INT(0)));
+
+                self.gen(Operations::STORE);
+                self.gen(Operations::ARG(Value::STR(counter_name.clone())));
+
+                // setting up condition
+
+                let condition_adress = self.pc;
+
+                self.compile(*node.op1.clone().unwrap());
+
+                self.gen(Operations::FETCH);
+                self.gen(Operations::ARG(Value::STR(counter_name.clone())));
+
+                self.gen(Operations::BT);
+
+                // if condition is true
+
+                self.gen(Operations::JZ);
+
+                self.jump_codes.push(self.pc as usize);
+
+                self.gen(Operations::ARG(Value::INT(self.pc + 3)));
+
+                // if condition is false
+
+                self.gen(Operations::JMP);
+                self.jump_codes.push(self.pc as usize);
+
+                let false_condition_adress = self.pc;
+                self.gen(Operations::ARG(Value::INT(0)));
+
+                // storing variable with slice from iterable
+                self.compile(*node.op1.clone().unwrap());
+                self.gen(Operations::FETCH);
+                self.gen(Operations::ARG(Value::STR(counter_name.clone())));
+
+                self.gen(Operations::SLICE);
+
+                self.gen(Operations::STORE);
+                self.gen(Operations::ARG(varname));
+
+                // compiling statement block
+                self.compile(*node.op2.clone().unwrap());
+
+                // increasing counter variable
+                self.gen(Operations::FETCH);
+                self.gen(Operations::ARG(Value::STR(counter_name.clone())));
+
+                self.gen(Operations::PUSH);
+                self.gen(Operations::ARG(Value::INT(1)));
+
+                self.gen(Operations::ADD);
+
+                self.gen(Operations::STORE);
+                self.gen(Operations::ARG(Value::STR(counter_name.clone())));
+
+                // returning to condition
+                self.gen(Operations::JMP);
+                self.jump_codes.push(self.pc as usize);
+                self.gen(Operations::ARG(Value::INT(condition_adress)));
+
+                // replacing adresses
+
+                self.program[false_condition_adress as usize] =
                     Operations::ARG(Value::INT(self.pc));
             }
             Kind::FUNCTION_DEFINE => {
@@ -205,6 +327,13 @@ impl Compiler {
                     .collect::<Vec<Operations>>();
 
                 let mut program_compiler = Compiler::new();
+
+                for func in self.functions.clone() {
+                    program_compiler.functions.insert(func.0, func.1);
+                }
+
+                // Compiling
+
                 let program_bytes = program_compiler
                     .compile(*node.op2.clone().unwrap())
                     .program
@@ -231,6 +360,7 @@ impl Compiler {
                     name: function_name.clone(),
                     arguments: formatted_args,
                     program: program_bytes,
+                    jump_codes: program_compiler.jump_codes,
                 };
 
                 let stringify_function_name = match function_name {
@@ -248,20 +378,59 @@ impl Compiler {
                         // Initializating function object
 
                         let compiler_clone = self.clone();
-                        let function_object = compiler_clone
+                        let mut function_object = compiler_clone
                             .functions
                             .get(&function_name)
-                            .clone()
-                            .unwrap();
+                            .unwrap()
+                            .clone();
 
                         // Implementing arguments
 
-                        let mut args_compiler = Compiler::new();
-                        let mut args_bytes = args_compiler
+                        let mut compiler1 = Compiler::new();
+                        let mut args_node_1 = compiler1
                             .compile(*node.op1.clone().unwrap())
                             .program
                             .into_iter()
                             .collect::<Vec<Operations>>();
+
+                        let mut args_bytes = Vec::new();
+                        args_bytes.append(&mut args_node_1);
+
+                        // Checking for second node
+
+                        if let Some(node_2) = node.op2.clone() {
+                            let mut compiler2 = Compiler::new();
+                            let mut args_node_2 = compiler2
+                                .compile(*node_2)
+                                .program
+                                .into_iter()
+                                .collect::<Vec<Operations>>();
+
+                            args_bytes.append(&mut args_node_2);
+                        }
+
+                        // Formatting and comparing args
+
+                        let args_length = args_bytes.len();
+
+                        if args_length / 2 < function_object.arguments.len() {
+                            if let Value::STR(func_name) = function_object.clone().name {
+                                self.error(
+                                    format!(
+                                        "Not enough arguments for calling '{}' function!",
+                                        func_name
+                                    )
+                                    .as_str(),
+                                );
+                            }
+                        } else if args_length / 2 > function_object.arguments.len() {
+                            if let Value::STR(func_name) = function_object.clone().name {
+                                self.error(
+                                    format!("Too much arguments for '{}' function!", func_name)
+                                        .as_str(),
+                                );
+                            }
+                        }
 
                         self.program.append(&mut args_bytes);
 
@@ -270,6 +439,21 @@ impl Compiler {
                         for (_, arg) in function_object.arguments.iter().rev().enumerate() {
                             self.gen(Operations::STORE);
                             self.program.push(Operations::ARG(arg.clone()));
+                        }
+
+                        // Fixing jump codes in function
+
+                        for _position in function_object.jump_codes.clone() {
+                            if let Operations::ARG(Value::INT(_code)) =
+                                function_object.program[_position]
+                            {
+                                let formatted_code = self.pc + args_length as i32 + 2 + _code;
+
+                                function_object.program[_position] =
+                                    Operations::ARG(Value::INT(formatted_code));
+                            } else {
+                                self.error("Error with formatting function codes");
+                            }
                         }
 
                         let mut function_program = function_object.program.clone();
@@ -282,7 +466,7 @@ impl Compiler {
                         });
                     } else {
                         self.error(
-                            format!("Function '{}' is not defined!", &function_name).as_str(),
+                            format!("Function '{}' is not defined here!", &function_name).as_str(),
                         );
                     }
                 }
@@ -303,9 +487,6 @@ impl Compiler {
                 self.gen(Operations::SLICE);
             }
 
-            Kind::RETURN => {
-                self.compile(*node.op1.clone().unwrap());
-            }
             Kind::OP_MACRO => {
                 let mut args_compiler = Compiler::new();
                 let arguments = args_compiler
@@ -317,18 +498,92 @@ impl Compiler {
 
                 for arg in arguments {
                     if let Operations::ARG(Value::STR(string_argument)) = arg {
-                        if crate::vm::OPERATIONS_MAP.contains_key(&string_argument.as_str()) {
-                            let matched_operation = crate::vm::OPERATIONS_MAP
-                                .get(&string_argument.as_str())
-                                .unwrap();
+                        if OPERATIONS_MAP.contains_key(&string_argument.as_str()) {
+                            let matched_operation =
+                                OPERATIONS_MAP.get(&string_argument.as_str()).unwrap();
 
-                            self.gen(matched_operation.clone());
+                            if [Operations::JZ, Operations::JNZ, Operations::JMP]
+                                .contains(matched_operation)
+                            {
+                                self.gen(matched_operation.clone());
+                                self.jump_codes.push(self.pc as usize);
+                            } else {
+                                self.gen(matched_operation.clone());
+                            }
                         } else {
                             self.gen(Operations::ARG(Value::STR(string_argument)));
                         }
                     } else {
                         self.gen(arg);
                     }
+                }
+            }
+
+            Kind::FILE_IMPORT => {
+                if let Some(Value::STR(_str)) = node.value {
+                    // finding file
+                    let _filepath = crate::filereader::search_import(_str.clone());
+
+                    if _filepath == "FILE_NOT_FOUND_1_HIW_ERROR" {
+                        self.error(format!("Import '{}' not found!", _str).as_str());
+                    }
+
+                    let _source = crate::filereader::get_code(_filepath);
+
+                    // compiling source code
+
+                    let _lexer = crate::lexer::Lexer::new(_source, _str);
+
+                    let mut lexer_clone = _lexer.clone();
+                    while lexer_clone.token != Some(crate::lexer::Token::EOF) {
+                        lexer_clone.next_token();
+                    }
+
+                    if lexer_clone.errors.len() > 0 {
+                        for err in lexer_clone.errors {
+                            eprintln!("{}", err);
+                        }
+                        std::process::exit(1);
+                    }
+
+                    let mut _parser = crate::parser::Parser::new(_lexer);
+                    let _ast = _parser.parse();
+
+                    if _parser.errors.len() > 0 {
+                        for err in _parser.errors {
+                            eprintln!("{}", err);
+                            std::process::exit(1);
+                        }
+                    }
+
+                    let mut _compiler = crate::compiler::Compiler::new();
+                    let _byte_code = _compiler.compile_all(_ast);
+
+                    // for first copying functions to the main byte code
+
+                    for func in _byte_code.functions {
+                        self.functions.insert(func.0, func.1);
+                    }
+
+                    // next format imported program to main
+
+                    let mut program_object = _byte_code.program;
+
+                    for _pos in _byte_code.jump_codes {
+                        if let Operations::ARG(Value::INT(_code)) = program_object[_pos] {
+                            let formatted_code = self.pc + _code;
+                            program_object[_pos] = Operations::ARG(Value::INT(formatted_code));
+                        }
+
+                        // soon...
+                    }
+
+                    // deleting HALT for continue the program
+                    let _ = program_object.pop();
+
+                    // now we can attach it to the current
+
+                    self.program.append(&mut program_object);
                 }
             }
 
@@ -386,6 +641,7 @@ impl Compiler {
         ByteCode {
             program: self.program.clone(),
             functions: self.functions.clone(),
+            jump_codes: self.jump_codes.clone(),
         }
     }
 }

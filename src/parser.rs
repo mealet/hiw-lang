@@ -1,6 +1,7 @@
 // Parser - hardest module in compiler (ig). It creates Binary Tree with abstract image of code
 
 #[allow(dead_code, unused)]
+use colored::Colorize;
 
 type LEXER = crate::lexer::Lexer;
 type VALUE = crate::lexer::Value;
@@ -34,9 +35,12 @@ pub enum Kind {
     IF,
     IF_ELSE,
     WHILE,
+    FOR,
 
     FUNCTION_DEFINE,
     FUNCTION_CALL,
+
+    FILE_IMPORT,
 
     BRACK_ENUM,
     ARGS_ENUM,
@@ -73,15 +77,51 @@ impl Node {
 
 pub struct Parser {
     lexer: LEXER,
+    pub errors: Vec<String>,
 }
 
 impl Parser {
     pub fn new(lexer: LEXER) -> Self {
-        Parser { lexer }
+        Parser {
+            lexer,
+            errors: Vec::new(),
+        }
     }
 
-    fn error(&self, message: &str) {
-        println!("[ParseError]: {}", message);
+    fn error(&mut self, message: &str) {
+        let current_line_source =
+            self.lexer.source_code.lines().collect::<Vec<&str>>()[self.lexer.current_line - 1];
+
+        let error_message = format!(
+            "{} {}\n{}\n{}\n {} {}",
+            "[ParserError]:".red(),
+            message,
+            format!("    |- {}", self.lexer.filename).cyan(),
+            "    |".cyan(),
+            format!("{}  |", self.lexer.current_line).cyan(),
+            current_line_source,
+        );
+
+        self.errors.push(error_message);
+
+        self.lexer.next_token();
+    }
+
+    fn critical_error(&mut self, message: &str) {
+        let current_line_source =
+            self.lexer.source_code.lines().collect::<Vec<&str>>()[self.lexer.current_line - 1];
+
+        let error_message = format!(
+            "{} {}\n{}\n{}\n {} {}",
+            "[CriticalParserError]:".red(),
+            message,
+            format!("    |- {}", self.lexer.filename).cyan(),
+            "    |".cyan(),
+            format!("{}  |", self.lexer.current_line).cyan(),
+            current_line_source,
+        );
+
+        eprintln!("{}", error_message);
         std::process::exit(1);
     }
 
@@ -141,22 +181,9 @@ impl Parser {
                             self.error("Expected '(' for function call");
                         }
 
-                        // Going to args or ')'
+                        // Parsing other arguments
 
-                        self.lexer.next_token();
-
-                        // For now ignoring all arguments
-
-                        while self.lexer.token != Some(Token::RPAR) {
-                            if self.lexer.token == Some(Token::SEMICOLON)
-                                || self.lexer.token == Some(Token::EOF)
-                            {
-                                self.error("Expected ')' after function call");
-                            }
-                            self.lexer.next_token();
-                        }
-
-                        self.lexer.next_token();
+                        node.op2 = Some(Box::new(self.paren_arguments()));
                     }
                     _ => {}
                 };
@@ -210,22 +237,9 @@ impl Parser {
                             self.error("Expected '(' for function call");
                         }
 
-                        // Going to args or ')'
+                        // Parsing other arguments
 
-                        self.lexer.next_token();
-
-                        // For now ignoring all arguments
-
-                        while self.lexer.token != Some(Token::RPAR) {
-                            if self.lexer.token == Some(Token::SEMICOLON)
-                                || self.lexer.token == Some(Token::EOF)
-                            {
-                                self.error("Expected ')' after function call");
-                            }
-                            self.lexer.next_token();
-                        }
-
-                        self.lexer.next_token();
+                        node.op2 = Some(Box::new(self.paren_arguments()));
                     }
                     _ => {}
                 }
@@ -272,20 +286,9 @@ impl Parser {
                             self.error("Expected '(' for function call");
                         }
 
-                        // Going to args or ')'
+                        // Parsing other arguments
 
-                        self.lexer.next_token();
-
-                        // For now ignoring all arguments
-
-                        while self.lexer.token != Some(Token::RPAR) {
-                            if self.lexer.token == Some(Token::SEMICOLON)
-                                || self.lexer.token == Some(Token::EOF)
-                            {
-                                self.error("Expected ')' after function call");
-                            }
-                            self.lexer.next_token();
-                        }
+                        node.op2 = Some(Box::new(self.paren_arguments()));
                     }
                     _ => {}
                 };
@@ -321,22 +324,9 @@ impl Parser {
                             self.error("Expected '(' for function call");
                         }
 
-                        // Going to args or ')'
+                        // Parsing other arguments
 
-                        self.lexer.next_token();
-
-                        // For now ignoring all arguments
-
-                        while self.lexer.token != Some(Token::RPAR) {
-                            if self.lexer.token == Some(Token::SEMICOLON)
-                                || self.lexer.token == Some(Token::EOF)
-                            {
-                                self.error("Expected ')' after function call");
-                            }
-                            self.lexer.next_token();
-                        }
-
-                        self.lexer.next_token();
+                        node.op2 = Some(Box::new(self.paren_arguments()));
                     }
                     _ => {}
                 }
@@ -372,22 +362,9 @@ impl Parser {
                             self.error("Expected '(' for function call");
                         }
 
-                        // Going to args or ')'
+                        // Parsing other arguments
 
-                        self.lexer.next_token();
-
-                        // For now ignoring all arguments
-
-                        while self.lexer.token != Some(Token::RPAR) {
-                            if self.lexer.token == Some(Token::SEMICOLON)
-                                || self.lexer.token == Some(Token::EOF)
-                            {
-                                self.error("Expected ')' after function call");
-                            }
-                            self.lexer.next_token();
-                        }
-
-                        self.lexer.next_token();
+                        node.op2 = Some(Box::new(self.paren_arguments()));
                     }
                     _ => {}
                 };
@@ -506,9 +483,27 @@ impl Parser {
 
         let mut node = Node::new(Kind::EMPTY, None, None, None, None);
 
+        if self.lexer.token == Some(Token::RPAR) {
+            self.lexer.next_token();
+            return node;
+        }
+
         while self.lexer.token != Some(Token::RPAR) {
             if self.lexer.token == Some(Token::COMMA) {
                 self.lexer.next_token();
+            }
+
+            match self.lexer.token {
+                Some(Token::COMMA) => self.lexer.next_token(),
+                Some(Token::EOF) => {
+                    self.critical_error("Parser got End Of File trying to parse arguments!")
+                }
+                Some(Token::SEMICOLON) => {
+                    self.error("Parser cannot get data in '()'");
+                    self.lexer.next_token();
+                    break;
+                }
+                _ => {}
             }
 
             node = Node::new(
@@ -590,7 +585,7 @@ impl Parser {
                 node = Node::new(
                     Kind::IF,
                     None,
-                    Some(Box::new(self.paren_expression())),
+                    Some(Box::new(self.expression())),
                     None,
                     None,
                 );
@@ -610,10 +605,40 @@ impl Parser {
                 node = Node::new(
                     Kind::WHILE,
                     None,
-                    Some(Box::new(self.paren_expression())),
+                    Some(Box::new(self.expression())),
                     Some(Box::new(self.statement())),
                     None,
                 );
+
+                self.lexer.next_token();
+            }
+            Token::FOR => {
+                self.lexer.next_token();
+
+                if self.lexer.token != Some(Token::ID) {
+                    self.error("Variable name expected after 'for' keyword");
+
+                    while self.lexer.token != Some(Token::RBRA) {
+                        self.lexer.next_token();
+                    }
+                }
+
+                node = Node::new(Kind::FOR, self.lexer.value.clone(), None, None, None);
+
+                self.lexer.next_token();
+
+                if self.lexer.token != Some(Token::IN) {
+                    self.error("Keyword 'in' expected after defining variable in 'for' cycle!");
+
+                    while self.lexer.token != Some(Token::RBRA) {
+                        self.lexer.next_token();
+                    }
+                };
+
+                self.lexer.next_token();
+
+                node.op1 = Some(Box::new(self.expression()));
+                node.op2 = Some(Box::new(self.statement()));
 
                 self.lexer.next_token();
             }
@@ -642,19 +667,6 @@ impl Parser {
                     }
                 };
             }
-            Token::RETURN => {
-                self.lexer.next_token();
-
-                node = Node::new(
-                    Kind::RETURN,
-                    None,
-                    Some(Box::new(self.expression())),
-                    None,
-                    None,
-                );
-
-                self.lexer.next_token();
-            }
             Token::OP => {
                 self.lexer.next_token();
 
@@ -665,6 +677,32 @@ impl Parser {
                     None,
                     None,
                 );
+            }
+            Token::USING => {
+                self.lexer.next_token();
+                self.lexer.next_token();
+
+                if self.lexer.token != Some(Token::STR) {
+                    self.error("Importing filename should be STR!");
+
+                    while self.lexer.token != Some(Token::SEMICOLON) {
+                        self.lexer.next_token();
+                    }
+
+                    return self.statement();
+                } else {
+                    let path_node = self.expression();
+
+                    node = Node::new(Kind::FILE_IMPORT, path_node.value, None, None, None);
+
+                    self.lexer.next_token();
+
+                    if self.lexer.token != Some(Token::SEMICOLON) {
+                        self.error("Expected ';' after import module");
+                    } else {
+                        self.lexer.next_token();
+                    }
+                }
             }
             //
             Token::LBRA => {
@@ -726,7 +764,7 @@ impl Parser {
                 if self.lexer.token.clone().unwrap() != Token::SEMICOLON {
                     self.error("';' expected after expression");
                 }
-                self.lexer.next_token()
+                self.lexer.next_token();
             }
         }
 

@@ -1,10 +1,8 @@
 // VM (virtual machine) - low level "computer" that gives me tool for converting AST to byte code
 // and running it on this VM
 
-use crate::compiler::ByteCode;
 use crate::lexer::Value;
 use std::collections::HashMap;
-use std::io::{stdout, Write};
 
 type PROGRAM = Vec<Operations>;
 
@@ -34,6 +32,11 @@ pub enum Operations {
     FETCH,
     STORE,
     //
+    TYPE,
+    LEN,
+    TO_INT,
+    TO_STR,
+    //
     PRINT,
     INPUT,
     //
@@ -47,35 +50,8 @@ pub enum Operations {
     //
     DROP,
     POP,
+    CLEAN,
     HALT,
-}
-
-lazy_static! {
-    pub static ref OPERATIONS_MAP: HashMap<&'static str, Operations> = {
-        let mut m = HashMap::new();
-        m.insert("PUSH", Operations::PUSH);
-        m.insert("ARR", Operations::ARR);
-        m.insert("SLICE", Operations::SLICE);
-        m.insert("ADD", Operations::ADD);
-        m.insert("SUB", Operations::SUB);
-        m.insert("DIV", Operations::DIV);
-        m.insert("MULT", Operations::MULT);
-        m.insert("VAR", Operations::VAR);
-        m.insert("FETCH", Operations::FETCH);
-        m.insert("STORE", Operations::STORE);
-        m.insert("PRINT", Operations::PRINT);
-        m.insert("INPUT", Operations::INPUT);
-        m.insert("LT", Operations::LT);
-        m.insert("BT", Operations::BT);
-        m.insert("EQ", Operations::EQ);
-        m.insert("JMP", Operations::JMP);
-        m.insert("JZ", Operations::JZ);
-        m.insert("JNZ", Operations::JNZ);
-        m.insert("DROP", Operations::DROP);
-        m.insert("POP", Operations::POP);
-        m.insert("HALT", Operations::HALT);
-        m
-    };
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -83,19 +59,48 @@ pub struct Function {
     pub name: Value,
     pub arguments: Vec<Value>,
     pub program: PROGRAM,
+    pub jump_codes: Vec<usize>,
 }
 
 impl VM {
     pub fn new(program: PROGRAM) -> Self {
         VM {
             stack: Vec::new(),
-            program: program,
+            program,
             variables: HashMap::new(),
         }
     }
 
+    // helping function
+
+    fn array_to_string(&self, arr: Vec<Value>) -> String {
+        let mut stringified_array: Vec<String> = Vec::new();
+
+        for i in arr {
+            match i {
+                Value::INT(int) => stringified_array.push(int.to_string()),
+                Value::STR(str) => stringified_array.push(str),
+                Value::BOOL(bool) => {
+                    if bool {
+                        stringified_array.push("true".to_string())
+                    } else {
+                        stringified_array.push("false".to_string())
+                    }
+                }
+                Value::ARRAY(arr) => {
+                    let str_arr = self.array_to_string(arr);
+                    stringified_array.push(str_arr.clone());
+                }
+            }
+        }
+
+        format!("[{}]", stringified_array.join(","))
+    }
+
+    // main
+
     fn error(&self, message: &str) {
-        eprintln!("[RuntimeError]: {}", message);
+        eprintln!("{} {}", "\x1b[31m[RuntimeError]\x1b[0m", message);
         std::process::exit(1);
     }
 
@@ -126,10 +131,12 @@ impl VM {
                             self.stack.push(Value::STR(format!("{}{}", a, b)));
                         }
                         (Value::ARRAY(a), Value::ARRAY(b)) => {
-                            let mut _temp_a = a.clone();
-                            let mut _temp_b = b.clone();
+                            let mut _temp_a: Vec<Value> = a.clone();
+                            let mut _temp_b: Vec<Value> = b.clone();
 
-                            let temp_array = _temp_a.append(&mut _temp_b);
+                            let _ = _temp_a.append(&mut _temp_b);
+
+                            self.stack.push(Value::ARRAY(_temp_a));
                         }
                         (Value::BOOL(a), Value::BOOL(b)) => {
                             let boolean_value = match (a, b) {
@@ -174,6 +181,8 @@ impl VM {
                             }
 
                             let _f = format!("[{}]{}", values_array.join(","), b);
+
+                            self.stack.push(Value::STR(_f));
                         }
                         (Value::STR(a), Value::ARRAY(b)) => {
                             let mut values_array: Vec<String> = Vec::new();
@@ -190,6 +199,8 @@ impl VM {
                             }
 
                             let _f = format!("[{}]{}", values_array.join(","), a);
+
+                            self.stack.push(Value::STR(_f));
                         }
 
                         // Other values we cannot implement
@@ -273,7 +284,7 @@ impl VM {
                                 self.error("Cannot divide string which length is less 2");
                             }
 
-                            let final_string_length = a.len() / 2;
+                            let final_string_length = a.len() / b as usize;
                             let _chars = a
                                 .clone()
                                 .chars()
@@ -304,6 +315,10 @@ impl VM {
                 Operations::POP => {
                     self.stack.pop();
                     pc += 1
+                }
+                Operations::CLEAN => {
+                    let _ = self.stack.clear();
+                    pc += 1;
                 }
                 Operations::DROP => {
                     match arg {
@@ -414,6 +429,68 @@ impl VM {
 
                     pc += 2
                 }
+                Operations::TYPE => {
+                    let stack_value = self.stack.pop().unwrap();
+
+                    match stack_value {
+                        Value::INT(_) => self.stack.push(Value::STR("INT".to_string())),
+                        Value::STR(_) => self.stack.push(Value::STR("STR".to_string())),
+                        Value::BOOL(_) => self.stack.push(Value::STR("BOOL".to_string())),
+                        Value::ARRAY(_) => self.stack.push(Value::STR("ARRAY".to_string())),
+                    };
+
+                    pc += 1;
+                }
+                Operations::TO_INT => {
+                    let stack_value = self.stack.pop().unwrap();
+
+                    match stack_value {
+                        Value::INT(_) => self.stack.push(stack_value),
+                        Value::STR(string) => {
+                            let try_parse = match string.trim().parse::<i32>() {
+                                Ok(val) => self.stack.push(Value::INT(val)),
+                                Err(_) => {
+                                    self.stack.push(Value::STR("INT_PARSE_ERROR".to_string()))
+                                }
+                            };
+                        }
+                        _ => self
+                            .stack
+                            .push(Value::STR("INT_PARSE_NOT_IMPLEMENTED".to_string())),
+                    };
+
+                    pc += 1;
+                }
+                Operations::TO_STR => {
+                    let stack_value = self.stack.pop().unwrap();
+
+                    match stack_value {
+                        Value::INT(int) => self.stack.push(Value::STR(int.to_string())),
+                        Value::STR(_) => self.stack.push(stack_value),
+                        Value::BOOL(bool) => {
+                            if bool {
+                                self.stack.push(Value::STR("true".to_string()))
+                            } else {
+                                self.stack.push(Value::STR("false".to_string()))
+                            }
+                        }
+                        Value::ARRAY(arr) => self.stack.push(Value::STR(self.array_to_string(arr))),
+                    }
+
+                    pc += 1;
+                }
+                Operations::LEN => {
+                    let stack_value = self.stack.pop().unwrap();
+
+                    match stack_value {
+                        Value::INT(_) => self.stack.push(stack_value),
+                        Value::STR(str) => self.stack.push(Value::INT(str.len() as i32)),
+                        Value::ARRAY(arr) => self.stack.push(Value::INT(arr.len() as i32)),
+                        _ => self.stack.push(Value::STR("LEN_NOT_COVERED".to_string())),
+                    }
+
+                    pc += 1;
+                }
                 Operations::PRINT => {
                     let print_value = self.stack.pop().unwrap();
                     match print_value {
@@ -433,24 +510,7 @@ impl VM {
                             }
                         }
                         Value::ARRAY(array) => {
-                            print!("\n[");
-
-                            for (index, item) in array.iter().enumerate() {
-                                let printable_value = match item {
-                                    Value::INT(i) => &i.to_string(),
-                                    Value::STR(s) => &format!("\"{}\"", s),
-                                    Value::BOOL(b) => &b.to_string(),
-                                    Value::ARRAY(_) => &("ERR".to_string()),
-                                };
-
-                                print!("{}", printable_value);
-
-                                if index != array.len() - 1 {
-                                    print!(", ");
-                                }
-                            }
-
-                            print!("]");
+                            println!("{}", self.array_to_string(array));
                         }
                     }
 
@@ -546,6 +606,23 @@ impl VM {
                                 self.stack.push(Value::BOOL(false));
                             }
                         }
+
+                        // Array and Int
+                        (Value::ARRAY(left), Value::INT(right)) => {
+                            if (left.len() as i32) < right {
+                                self.stack.push(Value::BOOL(true));
+                            } else {
+                                self.stack.push(Value::BOOL(false));
+                            }
+                        }
+                        (Value::INT(left), Value::ARRAY(right)) => {
+                            if (right.len() as i32) < left {
+                                self.stack.push(Value::BOOL(true));
+                            } else {
+                                self.stack.push(Value::BOOL(false));
+                            }
+                        }
+
                         _ => {
                             self.error(
                                 format!(
@@ -585,6 +662,22 @@ impl VM {
                                 self.stack.push(Value::BOOL(false));
                             }
                         }
+
+                        // Array and Int
+                        (Value::ARRAY(left), Value::INT(right)) => {
+                            if left.len() as i32 > right {
+                                self.stack.push(Value::BOOL(true));
+                            } else {
+                                self.stack.push(Value::BOOL(false));
+                            }
+                        }
+                        (Value::INT(left), Value::ARRAY(right)) => {
+                            if right.len() as i32 > left {
+                                self.stack.push(Value::BOOL(true));
+                            } else {
+                                self.stack.push(Value::BOOL(false));
+                            }
+                        }
                         _ => {
                             self.error(
                                 format!(
@@ -618,10 +711,6 @@ impl VM {
                         self.stack.pop();
                     }
 
-                    for _ in 0..self.stack.len() {
-                        array_result.push(self.stack.pop().unwrap());
-                    }
-
                     self.stack.push(Value::ARRAY(array_result));
 
                     pc += 1;
@@ -647,7 +736,12 @@ impl VM {
                                 self.stack
                                     .push(slicable_array[slice_index as usize].clone());
                             }
-                            _ => self.error("Cannot get slice from type exclude STR or ARRAY"),
+                            Value::INT(slicable_int) => {
+                                let arr = (0..=slicable_int).collect::<Vec<i32>>();
+                                self.stack.push(Value::INT(arr[slice_index as usize]));
+                            }
+                            _ => self
+                                .error("Cannot get slice from any type exclude STR, ARRAY and INT"),
                         },
                         _ => {
                             self.error("Cannot get slice of non-integer index!");
