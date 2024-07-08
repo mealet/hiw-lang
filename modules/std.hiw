@@ -1,8 +1,6 @@
-define range(start, end) {
-  counter = 0;
-  while (counter < end + 1) {
-    op!(FETCH counter);
-    counter = counter + 1;
+define range(range_end) {
+  for i in range_end + 1 {
+    op!(FETCH i);
   };
 
   op!(ARR);

@@ -167,7 +167,7 @@ impl Compiler {
 
                 self.gen(Operations::JZ);
                 self.jump_codes.push(self.pc as usize);
-                self.gen(Operations::ARG(Value::INT(self.pc + 3)));
+                self.gen(Operations::ARG(Value::INT(4)));
 
                 let else_adress = self.pc;
 
@@ -180,14 +180,14 @@ impl Compiler {
                 let after_adress = self.pc;
 
                 self.program[(else_adress + 1) as usize] =
-                    Operations::ARG(Value::INT(after_adress));
+                    Operations::ARG(Value::INT(after_adress - else_adress));
             }
             Kind::IF_ELSE => {
                 self.compile(*node.op1.clone().unwrap());
 
                 self.gen(Operations::JZ);
                 self.jump_codes.push(self.pc as usize);
-                self.gen(Operations::ARG(Value::INT(self.pc + 3)));
+                self.gen(Operations::ARG(Value::INT(4)));
 
                 let else_jmp_adress = self.pc;
 
@@ -210,10 +210,10 @@ impl Compiler {
                 let after_adress = self.pc;
 
                 self.program[(else_jmp_adress + 1) as usize] =
-                    Operations::ARG(Value::INT(else_adress));
+                    Operations::ARG(Value::INT(else_adress - else_jmp_adress));
 
                 self.program[(complete_adress + 1) as usize] =
-                    Operations::ARG(Value::INT(after_adress));
+                    Operations::ARG(Value::INT(after_adress - complete_adress));
             }
             Kind::WHILE => {
                 let condition_adress = self.pc;
@@ -222,7 +222,7 @@ impl Compiler {
 
                 self.gen(Operations::JZ);
                 self.jump_codes.push(self.pc as usize);
-                self.gen(Operations::ARG(Value::INT(self.pc + 3)));
+                self.gen(Operations::ARG(Value::INT(4)));
 
                 let false_jmp_adress = self.pc;
 
@@ -234,10 +234,10 @@ impl Compiler {
 
                 self.gen(Operations::JMP);
                 self.jump_codes.push(self.pc as usize);
-                self.gen(Operations::ARG(Value::INT(condition_adress)));
+                self.gen(Operations::ARG(Value::INT(condition_adress - self.pc + 1)));
 
                 self.program[(false_jmp_adress + 1) as usize] =
-                    Operations::ARG(Value::INT(self.pc));
+                    Operations::ARG(Value::INT(self.pc - false_jmp_adress));
             }
             Kind::FOR => {
                 // initializating counter variable
@@ -268,7 +268,7 @@ impl Compiler {
 
                 self.jump_codes.push(self.pc as usize);
 
-                self.gen(Operations::ARG(Value::INT(self.pc + 3)));
+                self.gen(Operations::ARG(Value::INT(4)));
 
                 // if condition is false
 
@@ -306,12 +306,12 @@ impl Compiler {
                 // returning to condition
                 self.gen(Operations::JMP);
                 self.jump_codes.push(self.pc as usize);
-                self.gen(Operations::ARG(Value::INT(condition_adress)));
+                self.gen(Operations::ARG(Value::INT(condition_adress - self.pc + 1)));
 
                 // replacing adresses
 
                 self.program[false_condition_adress as usize] =
-                    Operations::ARG(Value::INT(self.pc));
+                    Operations::ARG(Value::INT(self.pc - false_condition_adress + 1));
             }
             Kind::FUNCTION_DEFINE => {
                 let function_name = node.value.unwrap();
@@ -441,21 +441,6 @@ impl Compiler {
                             self.program.push(Operations::ARG(arg.clone()));
                         }
 
-                        // Fixing jump codes in function
-
-                        for _position in function_object.jump_codes.clone() {
-                            if let Operations::ARG(Value::INT(_code)) =
-                                function_object.program[_position]
-                            {
-                                let formatted_code = self.pc + args_length as i32 + 2 + _code;
-
-                                function_object.program[_position] =
-                                    Operations::ARG(Value::INT(formatted_code));
-                            } else {
-                                self.error("Error with formatting function codes");
-                            }
-                        }
-
                         let mut function_program = function_object.program.clone();
 
                         self.program.append(&mut function_program);
@@ -568,15 +553,6 @@ impl Compiler {
                     // next format imported program to main
 
                     let mut program_object = _byte_code.program;
-
-                    for _pos in _byte_code.jump_codes {
-                        if let Operations::ARG(Value::INT(_code)) = program_object[_pos] {
-                            let formatted_code = self.pc + _code;
-                            program_object[_pos] = Operations::ARG(Value::INT(formatted_code));
-                        }
-
-                        // soon...
-                    }
 
                     // deleting HALT for continue the program
                     let _ = program_object.pop();

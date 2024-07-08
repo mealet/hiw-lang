@@ -328,11 +328,6 @@ impl VM {
                         Operations::ARG(Value::STR(val)) => {
                             if self.variables.contains_key(&val) {
                                 self.variables.remove(&val);
-                            } else {
-                                self.error(
-                                    format!("Value '{}' being dropped does not exists!", &val)
-                                        .as_str(),
-                                );
                             }
                         }
                         _ => {
@@ -529,11 +524,21 @@ impl VM {
                 }
                 Operations::JMP => {
                     if let Operations::ARG(Value::INT(jump_code)) = arg {
-                        if jump_code as usize > self.program.len() {
-                            self.error("Jump Code is bigger than byte code!");
+                        if jump_code > self.program.len() as i32 {
+                            self.error(
+                                format!("Jump Code '{}' is bigger than byte code!", jump_code)
+                                    .as_str(),
+                            );
                             pc += 2;
                         } else {
-                            pc = jump_code as usize;
+                            if jump_code < 0 {
+                                let mut formatted_pc = pc.clone() as i32;
+                                formatted_pc += jump_code;
+
+                                pc = formatted_pc as usize;
+                            } else {
+                                pc += jump_code as usize;
+                            }
                         }
                     } else {
                         self.error("Jump Code isn't number!");
@@ -542,8 +547,11 @@ impl VM {
                 }
                 Operations::JZ => {
                     if let Operations::ARG(Value::INT(jump_code)) = arg {
-                        if jump_code as usize > self.program.len() {
-                            self.error("Jump Code is bigger than byte code!");
+                        if jump_code > self.program.len() as i32 {
+                            self.error(
+                                format!("Jump Code '{}' is bigger than byte code!", jump_code)
+                                    .as_str(),
+                            );
                         } else {
                             let stack_value = self.stack.pop().unwrap_or_else(|| {
                                 self.error("Stack error with boolean operation!");
@@ -551,7 +559,14 @@ impl VM {
                             });
                             if let Value::BOOL(unwrapped_value) = stack_value {
                                 if unwrapped_value == true {
-                                    pc = jump_code as usize;
+                                    if jump_code < 0 {
+                                        let mut formatted_pc = pc.clone() as i32;
+                                        formatted_pc += jump_code;
+
+                                        pc = formatted_pc as usize;
+                                    } else {
+                                        pc += jump_code as usize;
+                                    }
                                 } else {
                                     pc += 2;
                                 }
@@ -566,12 +581,22 @@ impl VM {
                 Operations::JNZ => {
                     if let Operations::ARG(Value::INT(jump_code)) = arg {
                         if jump_code as usize > self.program.len() {
-                            self.error("Jump Code is bigger than byte code!");
+                            self.error(
+                                format!("Jump Code '{}' is bigger than byte code!", jump_code)
+                                    .as_str(),
+                            );
                         } else {
                             let stack_value = self.stack.pop().unwrap();
                             if let Value::BOOL(unwrapped_value) = stack_value {
                                 if unwrapped_value != true {
-                                    pc = jump_code as usize
+                                    if jump_code < 0 {
+                                        let mut formatted_pc = pc.clone() as i32;
+                                        formatted_pc += jump_code;
+
+                                        pc = formatted_pc as usize;
+                                    } else {
+                                        pc += jump_code as usize;
+                                    }
                                 } else {
                                     pc += 2
                                 }
@@ -762,11 +787,6 @@ impl VM {
         }
 
         return Ok(());
-    }
-
-    pub fn store(&mut self, varname: String) {
-        let stack_value = self.stack.pop().unwrap_or(Value::INT(0));
-        self.variables.insert(varname, stack_value);
     }
 }
 "#;
