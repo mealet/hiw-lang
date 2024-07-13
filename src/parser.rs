@@ -1,3 +1,13 @@
+// ⌈                  ⌉
+//   hiw-lang compiler
+// ⌊                  ⌋
+//
+// Copyright ©️ 2024, mealet.
+// Project licensed under the BSD-3 License
+// that can be found in LICENSE file.
+//
+// Project Link: https://github.com/mealet/hiw-lang
+
 // Parser - hardest module in compiler (ig). It creates Binary Tree with abstract image of code
 
 #[allow(dead_code, unused)]

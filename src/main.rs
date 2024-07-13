@@ -1,8 +1,12 @@
-// HIW Compiler v1.0.0
-// HIW - Holy shit It Works
-// Simple compiler created for training in Rust Language
-// =====================================================
-// https://github.com/mealet
+// ⌈                  ⌉
+//   hiw-lang compiler
+// ⌊                  ⌋
+//
+// Copyright ©️ 2024, mealet.
+// Project licensed under the BSD-3 License
+// that can be found in LICENSE file.
+//
+// Project Link: https://github.com/mealet/hiw-lang
 
 #[allow(unused, dead_code)]
 #[macro_use]
