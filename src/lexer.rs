@@ -1,3 +1,13 @@
+// ⌈                  ⌉
+//   hiw-lang compiler
+// ⌊                  ⌋
+//
+// Copyright ©️ 2024, mealet.
+// Project licensed under the BSD-3 License
+// that can be found in LICENSE file.
+//
+// Project Link: https://github.com/mealet/hiw-lang
+
 // Lexer Analyzer - thing that gives me abstract data types (tokens) from just a string.
 
 use colored::Colorize;
