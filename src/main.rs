@@ -1,6 +1,6 @@
-// ⌈                  ⌉
+// ⌈                   ⌉
 //   hiw-lang compiler
-// ⌊                  ⌋
+// ⌊                   ⌋
 //
 // Copyright ©️ 2024, mealet.
 // Project licensed under the BSD-3 License
