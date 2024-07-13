@@ -1,12 +1,10 @@
-// ⌈                  ⌉
-//   hiw-lang compiler
-// ⌊                  ⌋
-//
+// hiw-lang compiler
+// https://github.com/mealet/hiw-lang
+// ----------------------------------------
 // Copyright ©️ 2024, mealet.
 // Project licensed under the BSD-3 License
 // that can be found in LICENSE file.
-//
-// Project Link: https://github.com/mealet/hiw-lang
+// ----------------------------------------
 
 // VM (virtual machine) - low level "computer" that gives me tool for converting AST to byte code
 // and running it on this VM

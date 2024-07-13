@@ -1,12 +1,10 @@
-// ⌈                  ⌉
-//   hiw-lang compiler
-// ⌊                  ⌋
-//
+// hiw-lang compiler
+// https://github.com/mealet/hiw-lang
+// ----------------------------------------
 // Copyright ©️ 2024, mealet.
 // Project licensed under the BSD-3 License
 // that can be found in LICENSE file.
-//
-// Project Link: https://github.com/mealet/hiw-lang
+// ----------------------------------------
 
 // Filereader - simple module for reading and formatting code
 
