@@ -16,8 +16,7 @@ elif command_exists pacman; then
 elif command_exists zypper; then
     PKG_MANAGER="zypper"
 else
-    echo "Supported package manager not found"
-    exit 1
+    echo "\033[0;31mSupported package manager not found. Please manually install if you don't have: what, curl, git, unzip \033[0m"
 fi
 
 case "$PKG_MANAGER" in
