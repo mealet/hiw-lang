@@ -1,14 +1,5 @@
 #!/bin/bash
 
-if [ -n "$BASH_VERSION" ]; then
-    SHELL_CONFIG="$HOME/.bashrc"
-elif [ -n "$ZSH_VERSION" ]; then
-    SHELL_CONFIG="$HOME/.zshrc"
-else
-    echo -e "\033[0;31mUnsupported shell. Please use bash or zsh.\033[0m"
-    exit 1
-fi
-
 if command -v rustup &> /dev/null
 then
     echo "rustup is already installed"
