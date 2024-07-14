@@ -55,10 +55,8 @@ unzip hiw-release.zip -d $HOME/.bin/
 echo "Removing the downloaded archive hiw-release.zip..."
 rm hiw-release.zip
 
-if ! grep -q 'export PATH="$HOME/.bin/hiw:$PATH"' "$SHELL_CONFIG"; then
-    echo 'export PATH="$HOME/.bin/hiw:$PATH"' >> "$SHELL_CONFIG"
-    source "$SHELL_CONFIG"
-fi
+echo "export PATH="$HOME/.bin/hiw:$PATH" >> ~/.bashrc
+echo "export PATH="$HOME/.bin/hiw:$PATH" >> ~/.zshrc
 
 echo -e "\033[0;32mInstallation and download completed!\033[0m"
 
