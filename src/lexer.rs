@@ -8,10 +8,10 @@
 
 // Lexer Analyzer - thing that gives me abstract data types (tokens) from just a string.
 
+use crate::vm::Value;
 use colored::Colorize;
 #[allow(unused)]
 use std::collections::HashMap;
-use std::process::exit;
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum Token {
@@ -69,14 +69,6 @@ pub enum Token {
 
     // End Of File
     EOF,
-}
-
-#[derive(Debug, Clone, Eq, PartialEq)]
-pub enum Value {
-    INT(i32),
-    STR(String),
-    BOOL(bool),
-    ARRAY(Vec<Value>),
 }
 
 #[derive(Debug, Clone)]

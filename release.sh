@@ -21,13 +21,9 @@ echo "Adding modules and dependencies"
 cp modules/* hiw
 cp src/vm.rs hiw
 
-# Edit vm.rs
-echo "Please, edit vm.rs module and compare with changes"
-echo "Opening vim in 3 seconds..."
-sleep 3
-vim hiw/vm.rs
+# Finally packing release
 
-echo "Building release..."
+echo "Packing release..."
 
 zip hiw-release.zip hiw/*
 

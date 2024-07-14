@@ -109,6 +109,4 @@ fn main() {
 //              <ARRAY>.push(arg)
 //              <ARRAY>.join(<STR>)
 //
-// TODO: Change binary compiler code (must read vm code from compiler folder)
-//
 // FIXME: Array in Array concatenating wrong

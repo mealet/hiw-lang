@@ -9,6 +9,7 @@
 // Filereader - simple module for reading and formatting code
 
 use std::fs;
+use std::io::Read;
 
 fn error(message: String) {
     eprintln!("{}", message);
@@ -55,7 +56,7 @@ pub fn search_import(path_to_file: String) -> String {
     let exe_path = std::env::current_exe().expect("Failed to get executable directory");
     let exe_dir = exe_path
         .parent()
-        .expect("Faield to get executable directory");
+        .expect("Failed to get executable directory");
     let exe_path_file = exe_dir.join(&path_to_file);
 
     match (current_dir_file.exists(), exe_path_file.exists()) {
@@ -64,5 +65,29 @@ pub fn search_import(path_to_file: String) -> String {
         // First priority to executable path modules
         (false, true) => return exe_path_file.to_str().unwrap().to_string(),
         (true, true) => return exe_path_file.to_str().unwrap().to_string(),
+    }
+}
+
+pub fn get_vm_code() -> String {
+    // checking vm at the compiler bin
+    let exe_dir = std::env::current_exe().unwrap();
+    let _dir = exe_dir.parent().unwrap();
+
+    let vm_file = _dir.join("vm.rs");
+
+    if vm_file.exists() {
+        let mut _file = std::fs::File::open(vm_file).unwrap();
+        let mut _source_code = String::new();
+
+        let _ = _file.read_to_string(&mut _source_code);
+
+        return _source_code;
+    } else {
+        let mut _file = std::fs::File::open("src/vm.rs").unwrap();
+        let mut _source_code = String::new();
+
+        let _ = _file.read_to_string(&mut _source_code);
+
+        return _source_code;
     }
 }
