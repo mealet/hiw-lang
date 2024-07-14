@@ -90,12 +90,24 @@ curl -s https://raw.githubusercontent.com/mealet/hiw-lang/master/install.sh | sh
 3. Restart the terminal and type `hiw` command. You'll see instructions about using compiler.
 4. Write code!
 
-### 🟢 | Windows
+#### 🟢 | Windows
 1. Install Rust from [official site](https://www.rust-lang.org/)
 2. Download **hiw** from [latest release][Release] and unpack it anywhere.
 3. Add directory where you unpacked release to [PATH](https://stackoverflow.com/questions/44272416/how-to-add-a-folder-to-path-environment-variable-in-windows-10-with-screensho)
 4. Restart the terminal and type `hiw` command. You'll see instructions about using compiler.
 5. Write code!
+
+## 😞 | Uninstall
+#### 🟠
+1. Open your terminal
+2. Paste this command:
+```bash
+curl -s https://raw.githubusercontent.com/mealet/hiw-lang/master/uninstall.sh | sh
+```
+3. Restart terminal
+
+#### 🟢 Windows
+1. Delete unpacked _hiw_ folder with all binaries inside.
 
 ## 📒 | Editors Support
 Editors which supports **hiw-lang** syntax:
