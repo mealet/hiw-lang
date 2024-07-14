@@ -81,15 +81,19 @@ hiw example.hiw output
 ```
 
 ## 💾 | Installation
-To correctly install **hiw language** use this instructions:
+#### 🟠 | Linux
+1. Open your terminal.
+2. Paste auto-install script:
+```bash
+curl -s https://raw.githubusercontent.com/mealet/hiw-lang/master/install.sh | sh
+```
+3. Restart the terminal and type `hiw` command. You'll see instructions about using compiler.
+4. Write code!
+
+### 🟢 | Windows
 1. Install Rust from [official site](https://www.rust-lang.org/)
-2. Download **hiw** from [latest release][Release]
-3. Add directory where you moved binary file to PATH:
-```
-PATH=$PATH:/path/to/hiw/ // bash and zsh
-fish_add_path "/path/to/hiw/" // fish
-$env:Path += ";C:\path\to\hiw" // powershell 
-```
+2. Download **hiw** from [latest release][Release] and unpack it anywhere.
+3. Add directory where you unpacked release to [PATH](https://stackoverflow.com/questions/44272416/how-to-add-a-folder-to-path-environment-variable-in-windows-10-with-screensho)
 4. Restart the terminal and type `hiw` command. You'll see instructions about using compiler.
 5. Write code!
 
