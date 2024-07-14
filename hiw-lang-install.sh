@@ -1,5 +1,46 @@
 #!/bin/bash
 
+command_exists() {
+    command -v "$1" >/dev/null 2>&1
+}
+
+# Определение пакетного менеджера
+if command_exists apt; then
+    PKG_MANAGER="apt"
+elif command_exists yum; then
+    PKG_MANAGER="yum"
+elif command_exists dnf; then
+    PKG_MANAGER="dnf"
+elif command_exists pacman; then
+    PKG_MANAGER="pacman"
+elif command_exists zypper; then
+    PKG_MANAGER="zypper"
+else
+    echo "Supported package manager not found"
+    exit 1
+fi
+
+case "$PKG_MANAGER" in
+    apt)
+        sudo apt update
+        sudo apt install -y git wget curl zip unzip
+        ;;
+    yum)
+        sudo yum install -y git wget curl zip unzip
+        ;;
+    dnf)
+        sudo dnf install -y git wget curl zip unzip
+        ;;
+    pacman)
+        sudo pacman -Syu --noconfirm
+        sudo pacman -S --noconfirm git wget curl zip unzip
+        ;;
+    zypper)
+        sudo zypper refresh
+        sudo zypper install -y git wget curl zip unzip
+        ;;
+esac
+
 echo "Installing rustup..."
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 
