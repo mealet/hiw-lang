@@ -9,12 +9,19 @@
 // VM (virtual machine) - low level "computer" that gives me tool for converting AST to byte code
 // and running it on this VM
 
-use crate::lexer::Value;
 use std::collections::HashMap;
 
 type PROGRAM = Vec<Operations>;
 
 // WARNING: Compare all updates with binary compiler
+
+#[derive(Debug, Clone, Eq, PartialEq)]
+pub enum Value {
+    INT(i32),
+    STR(String),
+    BOOL(bool),
+    ARRAY(Vec<Value>),
+}
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct VM {

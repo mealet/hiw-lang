@@ -9,9 +9,9 @@
 // Compiler - magic wand which converts AST to virtual machine code.
 
 use crate::{
-    lexer::Value,
     parser::{Kind, Node},
     vm::Operations,
+    vm::Value,
 };
 use colored::Colorize;
 use std::collections::HashMap;

@@ -8,14 +8,15 @@
 
 // Parser - hardest module in compiler (ig). It creates Binary Tree with abstract image of code
 
+use crate::vm::Value;
 #[allow(dead_code, unused)]
 use colored::Colorize;
 
 type LEXER = crate::lexer::Lexer;
-type VALUE = crate::lexer::Value;
+type VALUE = crate::vm::Value;
 type OPTION = Option<Box<Node>>;
 
-use crate::lexer::{Token, Value};
+use crate::lexer::Token;
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum Kind {
