@@ -98,7 +98,7 @@ curl -s https://raw.githubusercontent.com/mealet/hiw-lang/master/install.sh | sh
 5. Write code!
 
 ## 😞 | Uninstall
-#### 🟠
+#### 🟠 | Linux
 1. Open your terminal
 2. Paste this command:
 ```bash
@@ -106,7 +106,7 @@ curl -s https://raw.githubusercontent.com/mealet/hiw-lang/master/uninstall.sh | 
 ```
 3. Restart terminal
 
-#### 🟢 Windows
+#### 🟢 | Windows
 1. Delete unpacked _hiw_ folder with all binaries inside.
 
 ## 📒 | Editors Support
