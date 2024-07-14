@@ -8,10 +8,8 @@ else
     curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 fi
 
-if ! grep -q 'export PATH="$HOME/.cargo/bin:$PATH"' "$SHELL_CONFIG"; then
-    echo 'export PATH="$HOME/.cargo/bin:$PATH"' >> "$SHELL_CONFIG"
-    source "$SHELL_CONFIG"
-fi
+echo 'export PATH="$HOME/.cargo/bin:$PATH"' >> $HOME/.bashrc
+echo 'export PATH="$HOME/.cargo/bin:$PATH"' >> $HOME/.zshrc
 
 source $HOME/.cargo/env
 
@@ -46,8 +44,8 @@ unzip hiw-release.zip -d $HOME/.bin/
 echo "Removing the downloaded archive hiw-release.zip..."
 rm hiw-release.zip
 
-echo "export PATH="$HOME/.bin/hiw:$PATH" >> ~/.bashrc
-echo "export PATH="$HOME/.bin/hiw:$PATH" >> ~/.zshrc
+echo 'export PATH="$HOME/.bin/hiw:$PATH"' >> $HOME/.bashrc
+echo 'export PATH="$HOME/.bin/hiw:$PATH"' >> $HOME/.zshrc
 
 echo -e "\033[0;32mInstallation and download completed!\033[0m"
 
