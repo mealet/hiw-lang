@@ -85,7 +85,7 @@ hiw example.hiw output
 1. Open your terminal.
 2. Paste auto-install script:
 ```bash
-curl -s https://raw.githubusercontent.com/mealet/hiw-lang/master/install.sh | sh
+curl -s https://raw.githubusercontent.com/mealet/hiw-lang/master/hiw-install.sh | sh
 ```
 3. Restart the terminal and type `hiw` command. You'll see instructions about using compiler.
 4. Write code!
