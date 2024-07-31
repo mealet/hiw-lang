@@ -63,11 +63,15 @@ a.foo();
 // Use dynamic arrays
 arr = [1, "string", true];
 
-// Use cycle
+// Use cycles
 a = 0;
 while (a < 5) {
   print(a);
   a = a + 1;
+};
+
+for i in 10 {
+    print(i);
 };
 ```
 4. Compile and run it:
