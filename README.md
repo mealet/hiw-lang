@@ -119,4 +119,4 @@ Editors which supports **hiw-lang** syntax:
 * [VS Code](https://marketplace.visualstudio.com/items?itemName=mealet.hiw-language)
 
 ## 🎈 | License
-Project licensed under the MIT License -> [License File][License]
+Project licensed under the BSD-3 License -> [License File][License]
