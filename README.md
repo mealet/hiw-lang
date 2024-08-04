@@ -40,7 +40,7 @@ print(str1 + str2);
 
 // If/Else constructions
 a = 1;
-if (a < 5) {
+if a < 5 {
   print("less");
 } else {
   print("bigger");
@@ -65,7 +65,7 @@ arr = [1, "string", true];
 
 // Use cycles
 a = 0;
-while (a < 5) {
+while a < 5 {
   print(a);
   a = a + 1;
 };
