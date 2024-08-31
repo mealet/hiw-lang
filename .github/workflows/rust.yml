@@ -43,4 +43,4 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: ${{ matrix.platform }}-artifact
-          path: target/${{ matrix.platform }}/release/
+          path: target/${{ matrix.target }}/release/
