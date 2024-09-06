@@ -108,5 +108,3 @@ fn main() {
 // TODO: Add functions:
 //              <ARRAY>.push(arg)
 //              <ARRAY>.join(<STR>)
-//
-// FIXME: Array in Array concatenating wrong

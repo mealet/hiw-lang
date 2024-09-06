@@ -88,28 +88,20 @@ impl VM {
 
     // helping function
 
-    fn array_to_string(&self, arr: Vec<Value>) -> String {
-        let mut stringified_array: Vec<String> = Vec::new();
+    fn value_to_string(&self, val: Value) -> String {
+        match val {
+            Value::INT(int) => int.to_string(),
+            Value::STR(string) => format!("\"{}\"", string),
+            Value::BOOL(bool) => bool.to_string(),
+            Value::ARRAY(arr) => {
+                let mut _vector = Vec::new();
+                for item in arr {
+                    _vector.push(self.value_to_string(item));
+                }
 
-        for i in arr {
-            match i {
-                Value::INT(int) => stringified_array.push(int.to_string()),
-                Value::STR(str) => stringified_array.push(str),
-                Value::BOOL(bool) => {
-                    if bool {
-                        stringified_array.push("true".to_string())
-                    } else {
-                        stringified_array.push("false".to_string())
-                    }
-                }
-                Value::ARRAY(arr) => {
-                    let str_arr = self.array_to_string(arr);
-                    stringified_array.push(str_arr.clone());
-                }
+                format!("[{}]", _vector.join(", "))
             }
         }
-
-        format!("[{}]", stringified_array.join(","))
     }
 
     // main
@@ -474,18 +466,9 @@ impl VM {
                 Operations::TO_STR => {
                     let stack_value = self.stack.pop().unwrap();
 
-                    match stack_value {
-                        Value::INT(int) => self.stack.push(Value::STR(int.to_string())),
-                        Value::STR(_) => self.stack.push(stack_value),
-                        Value::BOOL(bool) => {
-                            if bool {
-                                self.stack.push(Value::STR("true".to_string()))
-                            } else {
-                                self.stack.push(Value::STR("false".to_string()))
-                            }
-                        }
-                        Value::ARRAY(arr) => self.stack.push(Value::STR(self.array_to_string(arr))),
-                    }
+                    let _ = self
+                        .stack
+                        .push(Value::STR(self.value_to_string(stack_value)));
 
                     pc += 1;
                 }
@@ -503,26 +486,7 @@ impl VM {
                 }
                 Operations::PRINT => {
                     let print_value = self.stack.pop().unwrap();
-                    match print_value {
-                        Value::INT(integer) => {
-                            println!("{}", integer)
-                        }
-                        Value::STR(string) => match string.as_str() {
-                            "::stack" => println!("{:?}", self.stack.clone()),
-                            "::var" => println!("{:?}", self.variables.clone()),
-                            _ => println!("{}", string),
-                        },
-                        Value::BOOL(boo) => {
-                            if boo {
-                                println!("true");
-                            } else {
-                                println!("false");
-                            }
-                        }
-                        Value::ARRAY(array) => {
-                            println!("{}", self.array_to_string(array));
-                        }
-                    }
+                    println!("{}", self.value_to_string(print_value));
 
                     pc += 1;
                 }
