@@ -13,7 +13,7 @@
 [Release]: https://github.com/mealet/hiw-lang/releases/latest
 [Installation]: https://github.com/mealet/hiw-lang?tab=readme-ov-file#--installation
 [Quick Start]: https://github.com/mealet/hiw-lang?tab=readme-ov-file#--quick-start
-[Documentation]: https://github.com/mealet/hiw-lang/wiki/Documentation
+[Documentation]: https://github.com/mealet/hiw-lang/wiki/HIW-Documentation
 [Editors Support]: https://github.com/mealet/hiw-lang?tab=readme-ov-file#--editors-support
 [License]: https://github.com/mealet/hiw-lang/blob/master/LICENSE
 
